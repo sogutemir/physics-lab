@@ -78,6 +78,20 @@ export default function HomeScreen() {
               </View>
             </TouchableOpacity>
           </Link>
+
+          <Link href="/experiments/basics/coriolis-effect" asChild>
+            <TouchableOpacity style={styles.card}>
+              <View style={styles.cardIconContainer}>
+                <Beaker size={24} color="#3498db" />
+              </View>
+              <Text style={styles.cardTitle}>{t('Coriolis Etkisi', 'Coriolis Effect')}</Text>
+              <Text style={styles.cardDifficulty}>{t('İleri Seviye', 'Advanced')}</Text>
+              <View style={styles.cardFooter}>
+                <Text style={styles.cardAction}>{t('Deneyi Başlat', 'Start Experiment')}</Text>
+                <ArrowRight size={16} color="#3498db" />
+              </View>
+            </TouchableOpacity>
+          </Link>
         </ScrollView>
       </View>
 

@@ -50,6 +50,9 @@ export default function VectorAdditionExperiment() {
     y: canvasSize / 2 
   };
 
+  // ScrollView referansı
+  const scrollViewRef = useRef<ScrollView>(null);
+
   // State
   const [state, setState] = useState<VectorState>({
     vectors: [],
@@ -139,95 +142,11 @@ export default function VectorAdditionExperiment() {
     return `M ${tipX} ${tipY} L ${leftX} ${leftY} L ${rightX} ${rightY} Z`;
   }, []);
 
-  // Dokunma/fare olayları
-  const handleTouchStart = useCallback((e: GestureResponderEvent) => {
-    if (state.stage === 1) return;
-
-    const touch = e.nativeEvent.touches ? e.nativeEvent.touches[0] : e.nativeEvent;
-    const x = touch.locationX;
-    const y = touch.locationY;
-
-    // Merkez noktası kontrolü
-    if (Math.abs(x - state.basePoint.x) < 15 && Math.abs(y - state.basePoint.y) < 15) {
-      setTouchState({
-        isDragging: true,
-        isBase: true,
-        vectorIndex: -1,
-        lastX: x,
-        lastY: y
-      });
-      return;
-    }
-
-    // Vektör ucu kontrolü
-    state.vectors.forEach((vector, index) => {
-      if (Math.abs(x - vector.end.x) < 15 && Math.abs(y - vector.end.y) < 15) {
-        setTouchState({
-          isDragging: true,
-          isBase: false,
-          vectorIndex: index,
-          lastX: x,
-          lastY: y
-        });
-      }
-    });
-  }, [state.stage, state.basePoint, state.vectors]);
-
-  const handleTouchMove = useCallback((e: GestureResponderEvent) => {
-    if (!touchState.isDragging) return;
-
-    const touch = e.nativeEvent.touches ? e.nativeEvent.touches[0] : e.nativeEvent;
-    const x = touch.locationX;
-    const y = touch.locationY;
-    const dx = x - touchState.lastX;
-    const dy = y - touchState.lastY;
-
-    setState(prev => {
-      if (touchState.isBase) {
-        // Merkez noktası sürükleniyor
-        const newBasePoint = { x: prev.basePoint.x + dx, y: prev.basePoint.y + dy };
-        const newVectors = prev.vectors.map(v => ({
-          ...v,
-          start: { x: v.start.x + dx, y: v.start.y + dy },
-          end: { x: v.end.x + dx, y: v.end.y + dy }
-        }));
-        return {
-          ...prev,
-          basePoint: newBasePoint,
-          vectors: newVectors,
-          resultant: prev.resultant ? {
-            ...prev.resultant,
-            start: { x: prev.resultant.start.x + dx, y: prev.resultant.start.y + dy },
-            end: { x: prev.resultant.end.x + dx, y: prev.resultant.end.y + dy }
-          } : undefined
-        };
-      } else {
-        // Vektör ucu sürükleniyor
-        const newVectors = [...prev.vectors];
-        newVectors[touchState.vectorIndex] = {
-          ...newVectors[touchState.vectorIndex],
-          end: { x: newVectors[touchState.vectorIndex].end.x + dx, y: newVectors[touchState.vectorIndex].end.y + dy }
-        };
-        return { ...prev, vectors: newVectors };
-      }
-    });
-
-    setTouchState(prev => ({
-      ...prev,
-      lastX: x,
-      lastY: y
-    }));
-  }, [touchState]);
-
-  const handleTouchEnd = useCallback(() => {
-    setTouchState(prev => ({
-      ...prev,
-      isDragging: false
-    }));
-  }, []);
-
   // Web için mouse olayları
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (state.stage === 1) return;
+    
+    // getBoundingClientRect hatası için düzeltme
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -256,12 +175,16 @@ export default function VectorAdditionExperiment() {
         });
       }
     });
-  }, [state.basePoint, state.vectors]);
+  }, [state.stage, state.basePoint, state.vectors]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!touchState.isDragging) return;
 
-    const rect = e.currentTarget.getBoundingClientRect();
+    // SVG konteynerin pozisyonunu al
+    const svgElement = document.querySelector('.svg-container') as HTMLElement;
+    if (!svgElement) return;
+    
+    const rect = svgElement.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const dx = x - touchState.lastX;
@@ -311,15 +234,140 @@ export default function VectorAdditionExperiment() {
     }));
   }, []);
 
+  // ScrollView'ı kilitle/serbest bırak
+  useEffect(() => {
+    if (Platform.OS !== 'web' && scrollViewRef.current) {
+      if (touchState.isDragging) {
+        // Sürükleme sırasında ScrollView'ı kilitle
+        scrollViewRef.current.setNativeProps({
+          scrollEnabled: false
+        });
+      } else {
+        // Sürükleme bittiğinde ScrollView'ı serbest bırak
+        scrollViewRef.current.setNativeProps({
+          scrollEnabled: true
+        });
+      }
+    }
+  }, [touchState.isDragging]);
+
+  // Dokunma/fare olayları
+  const handleTouchStart = useCallback((e: GestureResponderEvent) => {
+    if (state.stage === 1) return;
+
+    // Scroll'u engelle
+    if (Platform.OS !== 'web' && scrollViewRef.current) {
+      scrollViewRef.current.setNativeProps({
+        scrollEnabled: false
+      });
+    }
+    
+    const touch = e.nativeEvent.touches ? e.nativeEvent.touches[0] : e.nativeEvent;
+    const x = touch.locationX;
+    const y = touch.locationY;
+
+    // Merkez noktası kontrolü
+    if (Math.abs(x - state.basePoint.x) < 15 && Math.abs(y - state.basePoint.y) < 15) {
+      setTouchState({
+        isDragging: true,
+        isBase: true,
+        vectorIndex: -1,
+        lastX: x,
+        lastY: y
+      });
+      return;
+    }
+
+    // Vektör ucu kontrolü
+    state.vectors.forEach((vector, index) => {
+      if (Math.abs(x - vector.end.x) < 15 && Math.abs(y - vector.end.y) < 15) {
+        setTouchState({
+          isDragging: true,
+          isBase: false,
+          vectorIndex: index,
+          lastX: x,
+          lastY: y
+        });
+      }
+    });
+  }, [state.stage, state.basePoint, state.vectors]);
+
+  const handleTouchMove = useCallback((e: GestureResponderEvent) => {
+    if (!touchState.isDragging) return;
+
+    // Scroll'u engelle
+    if (Platform.OS !== 'web' && scrollViewRef.current) {
+      scrollViewRef.current.setNativeProps({
+        scrollEnabled: false
+      });
+    }
+    
+    const touch = e.nativeEvent.touches ? e.nativeEvent.touches[0] : e.nativeEvent;
+    const x = touch.locationX;
+    const y = touch.locationY;
+    const dx = x - touchState.lastX;
+    const dy = y - touchState.lastY;
+
+    setState(prev => {
+      if (touchState.isBase) {
+        // Merkez noktası sürükleniyor
+        const newBasePoint = { x: prev.basePoint.x + dx, y: prev.basePoint.y + dy };
+        const newVectors = prev.vectors.map(v => ({
+          ...v,
+          start: { x: v.start.x + dx, y: v.start.y + dy },
+          end: { x: v.end.x + dx, y: v.end.y + dy }
+        }));
+        return {
+          ...prev,
+          basePoint: newBasePoint,
+          vectors: newVectors,
+          resultant: prev.resultant ? {
+            ...prev.resultant,
+            start: { x: prev.resultant.start.x + dx, y: prev.resultant.start.y + dy },
+            end: { x: prev.resultant.end.x + dx, y: prev.resultant.end.y + dy }
+          } : undefined
+        };
+      } else {
+        // Vektör ucu sürükleniyor
+        const newVectors = [...prev.vectors];
+        newVectors[touchState.vectorIndex] = {
+          ...newVectors[touchState.vectorIndex],
+          end: { x: newVectors[touchState.vectorIndex].end.x + dx, y: newVectors[touchState.vectorIndex].end.y + dy }
+        };
+        return { ...prev, vectors: newVectors };
+      }
+    });
+
+    setTouchState(prev => ({
+      ...prev,
+      lastX: x,
+      lastY: y
+    }));
+  }, [touchState]);
+
+  const handleTouchEnd = useCallback(() => {
+    // Scroll'u serbest bırak
+    if (Platform.OS !== 'web' && scrollViewRef.current) {
+      scrollViewRef.current.setNativeProps({
+        scrollEnabled: true
+      });
+    }
+    
+    setTouchState(prev => ({
+      ...prev,
+      isDragging: false
+    }));
+  }, []);
+
   // Web için mouse olaylarını document'a ekle/kaldır
   useEffect(() => {
     if (Platform.OS === 'web' && touchState.isDragging) {
-      document.addEventListener('mousemove', handleMouseMove as any);
-      document.addEventListener('mouseup', handleMouseUp as any);
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
       
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove as any);
-        document.removeEventListener('mouseup', handleMouseUp as any);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
       };
     }
   }, [touchState.isDragging, handleMouseMove, handleMouseUp]);
@@ -502,9 +550,11 @@ export default function VectorAdditionExperiment() {
       onReset={resetVectors}
     >
       <ScrollView 
+        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={!touchState.isDragging}
       >
         {state.stage === 0 && (
           <View style={styles.instructionContainer}>
@@ -543,6 +593,7 @@ export default function VectorAdditionExperiment() {
           >
             {Platform.OS === 'web' && (
               <div 
+                className="svg-container"
                 style={{ 
                   position: 'absolute', 
                   width: '100%', 

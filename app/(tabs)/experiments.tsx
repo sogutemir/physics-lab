@@ -124,6 +124,17 @@ const experiments: Experiment[] = [
   },
   {
     id: '10',
+    title: 'Vektör Toplama',
+    titleEn: 'Vector Addition',
+    category: 'mechanics',
+    difficulty: 'Orta Seviye',
+    difficultyEn: 'Intermediate',
+    description: 'Vektörlerin toplanması ve bileşke vektörün oluşumu',
+    descriptionEn: 'Addition of vectors and formation of the resultant vector',
+    route: '/experiments/mechanics/vector-addition' as any,
+  },
+  {
+    id: '11',
     title: 'Moment Dengesi',
     titleEn: 'Torque Balance',
     category: 'mechanics',
@@ -134,7 +145,7 @@ const experiments: Experiment[] = [
     route: '/experiments/mechanics/torque-balance',
   },
   {
-    id: '11',
+    id: '12',
     title: 'Çift Yarık Deneyi',
     titleEn: 'Double Slit Experiment',
     category: 'waves',
@@ -145,7 +156,7 @@ const experiments: Experiment[] = [
     route: '/experiments/waves/double-slit',
   },
   {
-    id: '12',
+    id: '13',
     title: 'Dalga Girişimi',
     titleEn: 'Wave Interference',
     category: 'waves',
@@ -156,7 +167,7 @@ const experiments: Experiment[] = [
     route: '/experiments/waves/wave-interference',
   },
   {
-    id: '13',
+    id: '14',
     title: 'Enine Dalga',
     titleEn: 'Transverse Wave',
     category: 'waves',
@@ -167,7 +178,7 @@ const experiments: Experiment[] = [
     route: '/experiments/waves/transverse-wave',
   },
   {
-    id: '14',
+    id: '15',
     title: 'Optik Sistemler',
     titleEn: 'Optical Systems',
     category: 'waves',
@@ -178,7 +189,7 @@ const experiments: Experiment[] = [
     route: '/experiments/waves/optical-systems',
   },
   {
-    id: '15',
+    id: '16',
     title: 'Doppler Etkisi',
     titleEn: 'Doppler Effect',
     category: 'waves',
@@ -189,7 +200,7 @@ const experiments: Experiment[] = [
     route: '/experiments/waves/doppler-effect',
   },
   {
-    id: '16',
+    id: '17',
     title: 'Elektrik Alan',
     titleEn: 'Electric Field',
     category: 'electricity',
@@ -200,7 +211,7 @@ const experiments: Experiment[] = [
     route: '/experiments/electricity/electric-field',
   },
   {
-    id: '17',
+    id: '18',
     title: 'RLC Devresi',
     titleEn: 'RLC Circuit',
     category: 'electricity',
@@ -211,7 +222,7 @@ const experiments: Experiment[] = [
     route: '/experiments/electricity/rlc-circuit',
   },
   {
-    id: '18',
+    id: '19',
     title: 'Transformatör',
     titleEn: 'Transformer',
     category: 'electricity',
@@ -220,17 +231,6 @@ const experiments: Experiment[] = [
     description: 'Transformatör çalışma prensibi',
     descriptionEn: 'Transformer working principle',
     route: '/experiments/electricity/transformer',
-  },
-  {
-    id: '19',
-    title: 'Vektör Toplama',
-    titleEn: 'Vector Addition',
-    category: 'basics',
-    difficulty: 'Başlangıç',
-    difficultyEn: 'Beginner',
-    description: 'Vektörlerin toplanması ve çıkarılması',
-    descriptionEn: 'Addition and subtraction of vectors',
-    route: '/experiments/basics/vector-addition',
   },
   {
     id: '20',

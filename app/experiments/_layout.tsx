@@ -1,0 +1,13 @@
+import { Stack } from 'expo-router';
+
+export default function ExperimentsLayout() {
+  return (
+    <Stack>
+      <Stack.Screen name="mechanics/vector-addition" options={{ headerShown: false }} />
+      <Stack.Screen name="mechanics/conical-pendulum" options={{ headerShown: false }} />
+      <Stack.Screen name="mechanics/free-fall" options={{ headerShown: false }} />
+      <Stack.Screen name="mechanics/pendulum" options={{ headerShown: false }} />
+      <Stack.Screen name="mechanics/spring-mass" options={{ headerShown: false }} />
+    </Stack>
+  );
+} 

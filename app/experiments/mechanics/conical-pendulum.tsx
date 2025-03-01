@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, Dimensions, ScrollView, GestureResponderEvent } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Dimensions, ScrollView, GestureResponderEvent, Platform } from 'react-native';
 import Slider from '@react-native-community/slider';
 import Svg, { Line, Circle, Rect, Path } from 'react-native-svg';
 import ExperimentLayout from '../../../components/ExperimentLayout';
@@ -72,6 +72,50 @@ export default function ConicalPendulumExperiment() {
       isDragging: false,
     });
   };
+
+  // Web için mouse olayları
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    setTouchState({
+      isDragging: true,
+      lastX: e.clientX,
+      lastY: e.clientY,
+    });
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!touchState.isDragging) return;
+    
+    const deltaX = e.clientX - touchState.lastX;
+    
+    // Görüş açısını değiştir
+    setViewAngle(state.viewAngle + deltaX * 0.5);
+    
+    setTouchState({
+      ...touchState,
+      lastX: e.clientX,
+      lastY: e.clientY,
+    });
+  }, [touchState, state.viewAngle, setViewAngle]);
+
+  const handleMouseUp = useCallback(() => {
+    setTouchState(prev => ({
+      ...prev,
+      isDragging: false,
+    }));
+  }, []);
+
+  // Web için mouse olaylarını document'a ekle/kaldır
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      document.addEventListener('mousemove', handleMouseMove as any);
+      document.addEventListener('mouseup', handleMouseUp as any);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove as any);
+        document.removeEventListener('mouseup', handleMouseUp as any);
+      };
+    }
+  }, [handleMouseMove, handleMouseUp]);
 
   const toggleSimulation = () => {
     if (state.isRunning) {
@@ -181,6 +225,18 @@ export default function ConicalPendulumExperiment() {
               onTouchEnd={handleTouchEnd}
               onTouchCancel={handleTouchEnd}
             >
+              {Platform.OS === 'web' && (
+                <div 
+                  style={{ 
+                    position: 'absolute', 
+                    width: '100%', 
+                    height: '100%', 
+                    zIndex: 10,
+                    cursor: 'grab' 
+                  }}
+                  onMouseDown={handleMouseDown}
+                />
+              )}
               <Svg
                 width={viewDimensions.width}
                 height={viewDimensions.height}
@@ -319,7 +375,7 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     flexGrow: 1,
-    paddingBottom: 200, // Mobilde alt boşluğu artırdım
+    paddingBottom: Platform.OS === 'web' ? 50 : 200, // Mobilde alt boşluğu artırdım
   },
   experimentArea: {
     flex: 1,

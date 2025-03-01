@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Dimensions, ScrollView, GestureResponderEvent } from 'react-native';
 import Slider from '@react-native-community/slider';
+import Svg, { Line, Circle, Rect, Path } from 'react-native-svg';
 import ExperimentLayout from '../../../components/ExperimentLayout';
 import { useConicalPendulum } from './components/conical-pendulum/useConicalPendulum';
 import {
@@ -8,24 +9,19 @@ import {
   Point3D,
   calculateProjectionConstants,
   project3DTo2D,
-  drawLine,
-  drawCircle,
-  drawVector
 } from './components/conical-pendulum/drawing';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const PENDULUM_RADIUS = 8;
 const PROJECTION_DISTANCE = 1000;
 const PROJECTION_RHO = 5.5;
 
 export default function ConicalPendulumExperiment() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mouseRef = useRef<{ x: number; y: number; isDragging: boolean }>({
-    x: 0,
-    y: 0,
-    isDragging: false,
+  const [viewDimensions, setViewDimensions] = useState({
+    width: width - 30,
+    height: 400,
   });
-
+  
   const {
     state,
     startAnimation,
@@ -38,217 +34,44 @@ export default function ConicalPendulumExperiment() {
     setLength,
   } = useConicalPendulum();
 
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!ctx || !canvas) return;
+  // Dokunma olayları için state
+  const [touchState, setTouchState] = useState({
+    isDragging: false,
+    lastX: 0,
+    lastY: 0,
+  });
 
-    // Arka planı temizle
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'silver';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-
-    // Projeksiyon sabitlerini hesapla
-    const projConstants = calculateProjectionConstants(0, state.viewAngle);
-
-    // Zemin çiz
-    const groundPoints: Point3D[] = [
-      { x: 1, y: -1, z: 0 },
-      { x: 1, y: 1, z: 0 },
-      { x: -1, y: 1, z: 0 },
-      { x: -1, y: -1, z: 0 },
-    ];
-
-    ctx.fillStyle = state.viewAngle >= 0 ? 'white' : 'gray';
-    ctx.beginPath();
-    const firstPoint = project3DTo2D(groundPoints[0], projConstants, PROJECTION_DISTANCE, PROJECTION_RHO);
-    ctx.moveTo(centerX + firstPoint.x, centerY - firstPoint.y);
-    for (let i = 1; i < groundPoints.length; i++) {
-      const point = project3DTo2D(groundPoints[i], projConstants, PROJECTION_DISTANCE, PROJECTION_RHO);
-      ctx.lineTo(centerX + point.x, centerY - point.y);
-    }
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // Sarkaç konumunu hesapla
-    const radius = state.length * Math.sin(state.alpha);
-    const height = state.length * Math.cos(state.alpha);
-    const angle = state.omega * state.time;
-
-    const pendulumPos: Point3D = {
-      x: radius * Math.cos(angle),
-      y: radius * Math.sin(angle),
-      z: 1 - height,
-    };
-
-    // Yörüngeyi çiz
-    if (state.showTrajectory) {
-      ctx.strokeStyle = 'gray';
-      ctx.setLineDash([6, 4]);
-      ctx.lineWidth = 2;
-
-      const steps = 40;
-      for (let i = 0; i < steps; i++) {
-        const a = (2 * Math.PI * i) / steps;
-        const p1: Point3D = {
-          x: radius * Math.cos(a),
-          y: radius * Math.sin(a),
-          z: 1 - height,
-        };
-        const p2: Point3D = {
-          x: radius * Math.cos(a + (2 * Math.PI) / steps),
-          y: radius * Math.sin(a + (2 * Math.PI) / steps),
-          z: 1 - height,
-        };
-
-        const projected1 = project3DTo2D(p1, projConstants, PROJECTION_DISTANCE, PROJECTION_RHO);
-        const projected2 = project3DTo2D(p2, projConstants, PROJECTION_DISTANCE, PROJECTION_RHO);
-        drawLine(ctx, 
-          { x: centerX + projected1.x, y: centerY - projected1.y },
-          { x: centerX + projected2.x, y: centerY - projected2.y }
-        );
-      }
-      ctx.setLineDash([]);
-    }
-
-    // Dikey ekseni çiz
-    const axisTop: Point3D = { x: 0, y: 0, z: 1 };
-    const axisBottom: Point3D = { x: 0, y: 0, z: 0 };
-    const projectedTop = project3DTo2D(axisTop, projConstants, PROJECTION_DISTANCE, PROJECTION_RHO);
-    const projectedBottom = project3DTo2D(axisBottom, projConstants, PROJECTION_DISTANCE, PROJECTION_RHO);
-
-    ctx.strokeStyle = 'black';
-    ctx.lineWidth = 8;
-    drawLine(ctx,
-      { x: centerX + projectedTop.x, y: centerY - projectedTop.y },
-      { x: centerX + projectedBottom.x, y: centerY - projectedBottom.y }
-    );
-    ctx.lineWidth = 1;
-
-    // İpi çiz
-    const projectedPendulum = project3DTo2D(pendulumPos, projConstants, PROJECTION_DISTANCE, PROJECTION_RHO);
-    drawLine(ctx,
-      { x: centerX + projectedTop.x, y: centerY - projectedTop.y },
-      { x: centerX + projectedPendulum.x, y: centerY - projectedPendulum.y }
-    );
-
-    // Sarkacı çiz
-    ctx.fillStyle = 'red';
-    drawCircle(ctx,
-      { x: centerX + projectedPendulum.x, y: centerY - projectedPendulum.y },
-      PENDULUM_RADIUS,
-      true
-    );
-    ctx.strokeStyle = 'black';
-    drawCircle(ctx,
-      { x: centerX + projectedPendulum.x, y: centerY - projectedPendulum.y },
-      PENDULUM_RADIUS,
-      false
-    );
-
-    // Kuvvetleri çiz
-    if (state.showForces) {
-      const mass = 0.18; // kg
-      const scaleForce = 0.075;
-
-      // Ağırlık kuvveti (mg)
-      const weightForce: Point3D = {
-        x: pendulumPos.x,
-        y: pendulumPos.y,
-        z: pendulumPos.z - mass,
-      };
-      const projectedWeight = project3DTo2D(weightForce, projConstants, PROJECTION_DISTANCE, PROJECTION_RHO);
-      ctx.strokeStyle = 'blue';
-      drawVector(ctx,
-        { x: centerX + projectedPendulum.x, y: centerY - projectedPendulum.y },
-        { x: centerX + projectedWeight.x, y: centerY - projectedWeight.y }
-      );
-      ctx.fillText('mg', centerX + projectedWeight.x - 15, centerY - projectedWeight.y + 20);
-
-      // İp gerilmesi (T)
-      const tensionLength = state.length - mass / Math.cos(state.alpha);
-      const tensionForce: Point3D = {
-        x: tensionLength * Math.sin(state.alpha) * Math.cos(angle),
-        y: tensionLength * Math.sin(state.alpha) * Math.sin(angle),
-        z: 1 - tensionLength * Math.cos(state.alpha),
-      };
-      const projectedTension = project3DTo2D(tensionForce, projConstants, PROJECTION_DISTANCE, PROJECTION_RHO);
-      ctx.strokeStyle = 'brown';
-      drawVector(ctx,
-        { x: centerX + projectedPendulum.x, y: centerY - projectedPendulum.y },
-        { x: centerX + projectedTension.x, y: centerY - projectedTension.y }
-      );
-      ctx.fillText('T', centerX + projectedTension.x + 10, centerY - projectedTension.y - 10);
-
-      // Merkezcil kuvvet (F)
-      const centForce: Point3D = {
-        x: (radius - mass * Math.tan(state.alpha)) * Math.cos(angle),
-        y: (radius - mass * Math.tan(state.alpha)) * Math.sin(angle),
-        z: pendulumPos.z,
-      };
-      const projectedCent = project3DTo2D(centForce, projConstants, PROJECTION_DISTANCE, PROJECTION_RHO);
-      ctx.strokeStyle = 'green';
-      drawVector(ctx,
-        { x: centerX + projectedPendulum.x, y: centerY - projectedPendulum.y },
-        { x: centerX + projectedCent.x, y: centerY - projectedCent.y }
-      );
-      ctx.fillText('F', centerX + projectedCent.x + 10, centerY - projectedCent.y);
-    }
-
-    // Bilgileri yaz
-    ctx.font = 'bold 12px Arial';
-    ctx.fillStyle = 'black';
-    ctx.fillText(`L = ${state.length.toFixed(2)} m`, 60, 50);
-    ctx.fillText(`Açı α = ${(state.alpha * 180 / Math.PI).toFixed(1)}°`, 370, 50);
-    ctx.fillText(`Görüş açısı = ${state.viewAngle.toFixed(1)}°`, 180, canvas.height - 30);
-
-  }, [state]);
-
-  useEffect(() => {
-    draw();
-  }, [draw]);
-
-  // Mouse olayları
-  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    
-    mouseRef.current = {
-      x: 0,
-      y: clientY - rect.top,
+  const handleTouchStart = (e: GestureResponderEvent) => {
+    const touch = e.nativeEvent.touches[0];
+    setTouchState({
       isDragging: true,
-    };
-  }, []);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!mouseRef.current.isDragging) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    const y = clientY - rect.top;
-    const dy = mouseRef.current.y - y;
-    
-    setViewAngle((prev: number) => {
-      const newAngle = prev + dy * 0.5;
-      return Math.max(-70, Math.min(90, newAngle));
+      lastX: touch.pageX,
+      lastY: touch.pageY,
     });
+  };
 
-    mouseRef.current.y = y;
-  }, [setViewAngle]);
+  const handleTouchMove = (e: GestureResponderEvent) => {
+    if (!touchState.isDragging) return;
+    
+    const touch = e.nativeEvent.touches[0];
+    const deltaX = touch.pageX - touchState.lastX;
+    
+    // Görüş açısını değiştir
+    setViewAngle(state.viewAngle + deltaX * 0.5);
+    
+    setTouchState({
+      ...touchState,
+      lastX: touch.pageX,
+      lastY: touch.pageY,
+    });
+  };
 
-  const handleMouseUp = useCallback(() => {
-    mouseRef.current.isDragging = false;
-  }, []);
+  const handleTouchEnd = () => {
+    setTouchState({
+      ...touchState,
+      isDragging: false,
+    });
+  };
 
   const toggleSimulation = () => {
     if (state.isRunning) {
@@ -257,6 +80,80 @@ export default function ConicalPendulumExperiment() {
       startAnimation();
     }
   };
+
+  // SVG içinde çizim için hesaplamalar
+  const centerX = viewDimensions.width / 2;
+  const centerY = viewDimensions.height / 2;
+  const projConstants = calculateProjectionConstants(0, state.viewAngle);
+
+  // Sarkaç konumunu hesapla
+  const radius = state.length * Math.sin(state.alpha);
+  const height = state.length * Math.cos(state.alpha);
+  const angle = state.omega * state.time;
+
+  const pendulumPos: Point3D = {
+    x: radius * Math.cos(angle),
+    y: radius * Math.sin(angle),
+    z: 1 - height,
+  };
+
+  // 3D noktaları 2D'ye dönüştür
+  const projectPoint = (point: Point3D) => {
+    const projected = project3DTo2D(point, projConstants, PROJECTION_DISTANCE, PROJECTION_RHO);
+    return {
+      x: centerX + projected.x,
+      y: centerY - projected.y,
+    };
+  };
+
+  // Zemin noktaları
+  const groundPoints = [
+    { x: 1, y: -1, z: 0 },
+    { x: 1, y: 1, z: 0 },
+    { x: -1, y: 1, z: 0 },
+    { x: -1, y: -1, z: 0 },
+  ].map(projectPoint);
+
+  // Zemin path'i oluştur
+  const groundPath = `
+    M ${groundPoints[0].x} ${groundPoints[0].y}
+    L ${groundPoints[1].x} ${groundPoints[1].y}
+    L ${groundPoints[2].x} ${groundPoints[2].y}
+    L ${groundPoints[3].x} ${groundPoints[3].y}
+    Z
+  `;
+
+  // Dikey eksen noktaları
+  const axisTop = projectPoint({ x: 0, y: 0, z: 1 });
+  const axisBottom = projectPoint({ x: 0, y: 0, z: 0 });
+
+  // Sarkaç noktası
+  const projectedPendulum = projectPoint(pendulumPos);
+
+  // Yörünge noktaları
+  const trajectoryPoints = [];
+  if (state.showTrajectory) {
+    const steps = 40;
+    for (let i = 0; i < steps; i++) {
+      const a = (2 * Math.PI * i) / steps;
+      const p: Point3D = {
+        x: radius * Math.cos(a),
+        y: radius * Math.sin(a),
+        z: 1 - height,
+      };
+      trajectoryPoints.push(projectPoint(p));
+    }
+  }
+
+  // Yörünge path'i oluştur
+  let trajectoryPath = '';
+  if (trajectoryPoints.length > 0) {
+    trajectoryPath = `M ${trajectoryPoints[0].x} ${trajectoryPoints[0].y}`;
+    for (let i = 1; i < trajectoryPoints.length; i++) {
+      trajectoryPath += ` L ${trajectoryPoints[i].x} ${trajectoryPoints[i].y}`;
+    }
+    trajectoryPath += ` L ${trajectoryPoints[0].x} ${trajectoryPoints[0].y}`;
+  }
 
   return (
     <ExperimentLayout
@@ -270,98 +167,160 @@ export default function ConicalPendulumExperiment() {
       onToggleSimulation={toggleSimulation}
       onReset={resetAnimation}
     >
-      <View style={styles.experimentArea}>
-        <View style={styles.canvasContainer}>
-          <canvas
-            ref={canvasRef}
-            width={Math.min(width * 0.95, 600)}
-            height={400}
-            style={styles.canvas}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onTouchStart={handleMouseDown}
-            onTouchMove={handleMouseMove}
-            onTouchEnd={handleMouseUp}
-            onTouchCancel={handleMouseUp}
-          />
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.experimentArea}>
+          <View style={styles.canvasContainer}>
+            <View
+              style={styles.svgContainer}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
+            >
+              <Svg
+                width={viewDimensions.width}
+                height={viewDimensions.height}
+                style={styles.svg}
+              >
+                {/* Zemin */}
+                <Path
+                  d={groundPath}
+                  fill={state.viewAngle >= 0 ? 'white' : 'gray'}
+                  stroke="black"
+                  strokeWidth={1}
+                />
+                
+                {/* Yörünge */}
+                {state.showTrajectory && (
+                  <Path
+                    d={trajectoryPath}
+                    stroke="gray"
+                    strokeWidth={2}
+                    strokeDasharray="6,4"
+                    fill="none"
+                  />
+                )}
+                
+                {/* Dikey eksen */}
+                <Line
+                  x1={axisTop.x}
+                  y1={axisTop.y}
+                  x2={axisBottom.x}
+                  y2={axisBottom.y}
+                  stroke="black"
+                  strokeWidth={4}
+                />
+                
+                {/* İp */}
+                <Line
+                  x1={axisTop.x}
+                  y1={axisTop.y}
+                  x2={projectedPendulum.x}
+                  y2={projectedPendulum.y}
+                  stroke="black"
+                  strokeWidth={1}
+                />
+                
+                {/* Sarkaç */}
+                <Circle
+                  cx={projectedPendulum.x}
+                  cy={projectedPendulum.y}
+                  r={PENDULUM_RADIUS}
+                  fill="red"
+                  stroke="black"
+                  strokeWidth={1}
+                />
+              </Svg>
+            </View>
+          </View>
+
+          <View style={styles.controlsContainer}>
+            <View style={styles.controlGroup}>
+              <View style={styles.labelRow}>
+                <Text style={styles.label}>İp Uzunluğu</Text>
+                <Text style={styles.value}>{state.length.toFixed(2)} m</Text>
+              </View>
+              <Slider
+                value={state.length}
+                onValueChange={setLength}
+                minimumValue={0.5}
+                maximumValue={0.75}
+                step={0.01}
+                minimumTrackTintColor="#3498db"
+                maximumTrackTintColor="#bdc3c7"
+                thumbTintColor="#2980b9"
+                style={styles.slider}
+              />
+            </View>
+
+            <View style={styles.controlGroup}>
+              <View style={styles.labelRow}>
+                <Text style={styles.label}>Açısal Hız</Text>
+                <Text style={styles.value}>{state.omega.toFixed(1)} rad/s</Text>
+              </View>
+              <Slider
+                value={state.omega}
+                onValueChange={setOmega}
+                minimumValue={3.0}
+                maximumValue={7.0}
+                step={0.1}
+                minimumTrackTintColor="#3498db"
+                maximumTrackTintColor="#bdc3c7"
+                thumbTintColor="#2980b9"
+                style={styles.slider}
+              />
+            </View>
+
+            <View style={styles.switchRow}>
+              <Text style={styles.label}>Kuvvetleri Göster</Text>
+              <Switch
+                value={state.showForces}
+                onValueChange={toggleShowForces}
+                trackColor={{ false: "#bdc3c7", true: "#3498db" }}
+                thumbColor={state.showForces ? "#2980b9" : "#ecf0f1"}
+              />
+            </View>
+
+            <View style={styles.switchRow}>
+              <Text style={styles.label}>Yörüngeyi Göster</Text>
+              <Switch
+                value={state.showTrajectory}
+                onValueChange={toggleShowTrajectory}
+                trackColor={{ false: "#bdc3c7", true: "#3498db" }}
+                thumbColor={state.showTrajectory ? "#2980b9" : "#ecf0f1"}
+              />
+            </View>
+
+            <View style={styles.measurementsContainer}>
+              <View style={styles.measurementItem}>
+                <Text style={styles.measurementLabel}>Açı α:</Text>
+                <Text style={styles.measurementValue}>{(state.alpha * 180 / Math.PI).toFixed(1)}°</Text>
+              </View>
+              <View style={styles.measurementItem}>
+                <Text style={styles.measurementLabel}>Görüş Açısı:</Text>
+                <Text style={styles.measurementValue}>{state.viewAngle.toFixed(1)}°</Text>
+              </View>
+            </View>
+          </View>
         </View>
-
-        <View style={styles.controlsContainer}>
-          <View style={styles.controlGroup}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>İp Uzunluğu</Text>
-              <Text style={styles.value}>{state.length.toFixed(2)} m</Text>
-            </View>
-            <Slider
-              value={state.length}
-              onValueChange={setLength}
-              minimumValue={0.5}
-              maximumValue={0.75}
-              step={0.01}
-              minimumTrackTintColor="#3498db"
-              maximumTrackTintColor="#bdc3c7"
-              thumbTintColor="#2980b9"
-              style={styles.slider}
-            />
-          </View>
-
-          <View style={styles.controlGroup}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>Açısal Hız</Text>
-              <Text style={styles.value}>{state.omega.toFixed(1)} rad/s</Text>
-            </View>
-            <Slider
-              value={state.omega}
-              onValueChange={setOmega}
-              minimumValue={3.0}
-              maximumValue={7.0}
-              step={0.1}
-              minimumTrackTintColor="#3498db"
-              maximumTrackTintColor="#bdc3c7"
-              thumbTintColor="#2980b9"
-              style={styles.slider}
-            />
-          </View>
-
-          <View style={styles.switchRow}>
-            <Text style={styles.label}>Kuvvetleri Göster</Text>
-            <Switch
-              value={state.showForces}
-              onValueChange={toggleShowForces}
-              trackColor={{ false: "#bdc3c7", true: "#3498db" }}
-              thumbColor={state.showForces ? "#2980b9" : "#ecf0f1"}
-            />
-          </View>
-
-          <View style={styles.switchRow}>
-            <Text style={styles.label}>Yörüngeyi Göster</Text>
-            <Switch
-              value={state.showTrajectory}
-              onValueChange={toggleShowTrajectory}
-              trackColor={{ false: "#bdc3c7", true: "#3498db" }}
-              thumbColor={state.showTrajectory ? "#2980b9" : "#ecf0f1"}
-            />
-          </View>
-
-          <View style={styles.measurementsContainer}>
-            <View style={styles.measurementItem}>
-              <Text style={styles.measurementLabel}>Açı α:</Text>
-              <Text style={styles.measurementValue}>{(state.alpha * 180 / Math.PI).toFixed(1)}°</Text>
-            </View>
-            <View style={styles.measurementItem}>
-              <Text style={styles.measurementLabel}>Görüş Açısı:</Text>
-              <Text style={styles.measurementValue}>{state.viewAngle.toFixed(1)}°</Text>
-            </View>
-          </View>
-        </View>
-      </View>
+      </ScrollView>
     </ExperimentLayout>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingBottom: 200, // Mobilde alt boşluğu artırdım
+  },
   experimentArea: {
     flex: 1,
     alignItems: 'center',
@@ -377,12 +336,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 16,
   },
-  canvas: {
+  svgContainer: {
     width: '100%',
     height: '100%',
-    borderWidth: 1,
-    borderColor: '#ddd',
     backgroundColor: 'silver',
+  },
+  svg: {
+    width: '100%',
+    height: '100%',
   },
   controlsContainer: {
     width: '100%',
@@ -394,6 +355,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    marginBottom: 16,
   },
   controlGroup: {
     marginBottom: 16,

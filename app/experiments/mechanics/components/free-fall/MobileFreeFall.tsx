@@ -1,5 +1,6 @@
-import React, { useCallback, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import React, { useCallback, useRef, useEffect, forwardRef, useImperativeHandle, useState } from 'react';
+import { View, ScrollView, StyleSheet, Text, Dimensions } from 'react-native';
+import Svg, { Line, Circle, Path, Text as SvgText } from 'react-native-svg';
 import { FreeFallProps } from './types';
 import { useFreeFall } from './useFreeFall';
 import { FreeFallControls } from './FreeFallControls';
@@ -10,11 +11,10 @@ const MAX_X = 1500;
 const MAX_Y = 800;
 
 export const MobileFreeFall = forwardRef<any, FreeFallProps>(({
-  width = window.innerWidth,
-  height = window.innerHeight,
+  width = Dimensions.get('window').width,
+  height = Dimensions.get('window').height * 0.4,
   onStateChange,
 }, ref) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const timeRef = useRef<number>(0);
   
@@ -44,150 +44,98 @@ export const MobileFreeFall = forwardRef<any, FreeFallProps>(({
     resetSimulation
   }));
 
-  const drawAxis = useCallback((ctx: CanvasRenderingContext2D) => {
-    ctx.strokeStyle = '#7f8c8d';
-    ctx.lineWidth = 1;
-    
-    // X ekseni
-    ctx.beginPath();
-    ctx.moveTo(CANVAS_PADDING, canvasHeight - CANVAS_PADDING);
-    ctx.lineTo(canvasWidth - CANVAS_PADDING, canvasHeight - CANVAS_PADDING);
-    ctx.stroke();
+  // X ekseni işaretleri
+  const xAxisTicks = [];
+  for (let x = 0; x <= MAX_X; x += 300) {
+    const canvasX = toCanvasX(x);
+    xAxisTicks.push(
+      <React.Fragment key={`x-${x}`}>
+        <Line
+          x1={canvasX}
+          y1={canvasHeight - CANVAS_PADDING - 5}
+          x2={canvasX}
+          y2={canvasHeight - CANVAS_PADDING + 5}
+          stroke="#7f8c8d"
+          strokeWidth={1}
+        />
+        <SvgText
+          x={canvasX}
+          y={canvasHeight - CANVAS_PADDING + 15}
+          fill="#7f8c8d"
+          fontSize={9}
+          textAnchor="middle"
+        >
+          {x.toString() + ' m'}
+        </SvgText>
+      </React.Fragment>
+    );
+  }
 
-    // Y ekseni
-    ctx.beginPath();
-    ctx.moveTo(CANVAS_PADDING, CANVAS_PADDING);
-    ctx.lineTo(CANVAS_PADDING, canvasHeight - CANVAS_PADDING);
-    ctx.stroke();
+  // Y ekseni işaretleri
+  const yAxisTicks = [];
+  for (let y = 0; y <= MAX_Y; y += 200) {
+    const canvasY = toCanvasY(y);
+    yAxisTicks.push(
+      <React.Fragment key={`y-${y}`}>
+        <Line
+          x1={CANVAS_PADDING - 5}
+          y1={canvasY}
+          x2={CANVAS_PADDING + 5}
+          y2={canvasY}
+          stroke="#7f8c8d"
+          strokeWidth={1}
+        />
+        <SvgText
+          x={CANVAS_PADDING - 8}
+          y={canvasY + 4}
+          fill="#7f8c8d"
+          fontSize={9}
+          textAnchor="end"
+        >
+          {y.toString() + ' m'}
+        </SvgText>
+      </React.Fragment>
+    );
+  }
 
-    // X ekseni işaretleri
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#7f8c8d';
-    ctx.font = '9px Arial';
-    for (let x = 0; x <= MAX_X; x += 300) {
-      const canvasX = toCanvasX(x);
-      ctx.beginPath();
-      ctx.moveTo(canvasX, canvasHeight - CANVAS_PADDING - 5);
-      ctx.lineTo(canvasX, canvasHeight - CANVAS_PADDING + 5);
-      ctx.stroke();
-      ctx.fillText(x.toString() + ' m', canvasX, canvasHeight - CANVAS_PADDING + 15);
+  // Yörünge path'i oluştur
+  let trajectoryPath = '';
+  if (state.trajectory.length >= 2) {
+    trajectoryPath = `M ${toCanvasX(state.trajectory[0].x)} ${toCanvasY(state.trajectory[0].y)}`;
+    for (let i = 1; i < state.trajectory.length; i++) {
+      trajectoryPath += ` L ${toCanvasX(state.trajectory[i].x)} ${toCanvasY(state.trajectory[i].y)}`;
     }
+  }
 
-    // Y ekseni işaretleri
-    ctx.textAlign = 'right';
-    for (let y = 0; y <= MAX_Y; y += 200) {
-      const canvasY = toCanvasY(y);
-      ctx.beginPath();
-      ctx.moveTo(CANVAS_PADDING - 5, canvasY);
-      ctx.lineTo(CANVAS_PADDING + 5, canvasY);
-      ctx.stroke();
-      ctx.fillText(y.toString() + ' m', CANVAS_PADDING - 8, canvasY + 4);
-    }
+  // Cisim ve hız vektörü için hesaplamalar
+  const x = toCanvasX(state.position.x);
+  const y = toCanvasY(state.position.y);
+  const angle = state.angle * Math.PI / 180;
+  const vx = state.velocity * Math.cos(angle) * 0.2 * scaleX;
+  const vy = state.velocity * Math.sin(angle) * 0.2 * scaleY;
 
-    // Eksen etiketleri
-    ctx.fillStyle = '#2c3e50';
-    ctx.font = 'bold 12px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('x (m)', canvasWidth / 2, canvasHeight - 2);
-    
-    ctx.save();
-    ctx.translate(10, canvasHeight / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText('y (m)', 0, 0);
-    ctx.restore();
-  }, [canvasWidth, canvasHeight, toCanvasX, toCanvasY]);
+  // Ok ucu için path
+  const arrowPath = `
+    M ${x + vx} ${y - vy}
+    L ${x + vx - 8 * Math.cos(angle - Math.PI/6)} ${y - vy + 8 * Math.sin(angle - Math.PI/6)}
+    L ${x + vx - 8 * Math.cos(angle + Math.PI/6)} ${y - vy + 8 * Math.sin(angle + Math.PI/6)}
+    Z
+  `;
 
-  const drawTrajectory = useCallback((ctx: CanvasRenderingContext2D) => {
-    if (state.trajectory.length < 2) return;
-
-    ctx.beginPath();
-    ctx.strokeStyle = '#3498db';
-    ctx.lineWidth = 2;
-
-    state.trajectory.forEach((point, index) => {
-      const x = toCanvasX(point.x);
-      const y = toCanvasY(point.y);
-      
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    });
-
-    ctx.stroke();
-  }, [state.trajectory, toCanvasX, toCanvasY]);
-
-  const drawProjectile = useCallback((ctx: CanvasRenderingContext2D) => {
-    const x = toCanvasX(state.position.x);
-    const y = toCanvasY(state.position.y);
-
-    // Cisim
-    ctx.beginPath();
-    ctx.fillStyle = '#2ecc71';
-    ctx.arc(x, y, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Hız vektörü
-    const angle = state.angle * Math.PI / 180;
-    const vx = state.velocity * Math.cos(angle) * 0.2 * scaleX;
-    const vy = state.velocity * Math.sin(angle) * 0.2 * scaleY;
-    
-    ctx.beginPath();
-    ctx.strokeStyle = '#e74c3c';
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + vx, y - vy);
-    ctx.stroke();
-
-    // Ok ucu
-    ctx.beginPath();
-    ctx.moveTo(x + vx, y - vy);
-    ctx.lineTo(x + vx - 8 * Math.cos(angle - Math.PI/6), y - vy + 8 * Math.sin(angle - Math.PI/6));
-    ctx.lineTo(x + vx - 8 * Math.cos(angle + Math.PI/6), y - vy + 8 * Math.sin(angle + Math.PI/6));
-    ctx.closePath();
-    ctx.fill();
-  }, [state.position, state.velocity, state.angle, toCanvasX, toCanvasY, scaleX, scaleY]);
-
-  const drawInfo = useCallback((ctx: CanvasRenderingContext2D) => {
-    ctx.font = 'bold 12px Arial';
-    ctx.fillStyle = '#2c3e50';
-    ctx.textAlign = 'left';
-
-    const info = [
-      `t = ${state.time.toFixed(2)} s`,
-      `x = ${state.position.x.toFixed(1)} m`,
-      `y = ${state.position.y.toFixed(1)} m`,
-      `v = ${state.velocity.toFixed(1)} m/s`,
-    ];
-
-    info.forEach((text, index) => {
-      ctx.fillText(text, canvasWidth - 120, 20 + index * 15);
-    });
-  }, [state, canvasWidth]);
-
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!ctx || !canvas) return;
-
-    // Canvas'ı temizle
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#f5f5f5';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    drawAxis(ctx);
-    drawTrajectory(ctx);
-    drawProjectile(ctx);
-    drawInfo(ctx);
-  }, [drawAxis, drawTrajectory, drawProjectile, drawInfo]);
+  // Bilgi metinleri
+  const infoTexts = [
+    `t = ${state.time.toFixed(2)} s`,
+    `x = ${state.position.x.toFixed(1)} m`,
+    `y = ${state.position.y.toFixed(1)} m`,
+    `v = ${state.velocity.toFixed(1)} m/s`,
+  ];
 
   const animate = useCallback(() => {
     if (state.isRunning) {
       updatePosition();
-      draw();
       animationRef.current = requestAnimationFrame(animate);
     }
-  }, [state.isRunning, updatePosition, draw]);
+  }, [state.isRunning, updatePosition]);
 
   useEffect(() => {
     if (state.isRunning) {
@@ -196,7 +144,6 @@ export const MobileFreeFall = forwardRef<any, FreeFallProps>(({
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
-      draw();
     }
     
     return () => {
@@ -204,18 +151,123 @@ export const MobileFreeFall = forwardRef<any, FreeFallProps>(({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [state.isRunning, animate, draw]);
+  }, [state.isRunning, animate]);
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.canvasContainer}>
-          <canvas
-            ref={canvasRef}
+          <Svg
             width={canvasWidth}
             height={canvasHeight}
             style={styles.canvas}
-          />
+          >
+            {/* Arka plan */}
+            <Path
+              d={`M 0 0 H ${canvasWidth} V ${canvasHeight} H 0 Z`}
+              fill="#f5f5f5"
+            />
+            
+            {/* X ekseni */}
+            <Line
+              x1={CANVAS_PADDING}
+              y1={canvasHeight - CANVAS_PADDING}
+              x2={canvasWidth - CANVAS_PADDING}
+              y2={canvasHeight - CANVAS_PADDING}
+              stroke="#7f8c8d"
+              strokeWidth={1}
+            />
+            
+            {/* Y ekseni */}
+            <Line
+              x1={CANVAS_PADDING}
+              y1={CANVAS_PADDING}
+              x2={CANVAS_PADDING}
+              y2={canvasHeight - CANVAS_PADDING}
+              stroke="#7f8c8d"
+              strokeWidth={1}
+            />
+            
+            {/* Eksen işaretleri */}
+            {xAxisTicks}
+            {yAxisTicks}
+            
+            {/* Eksen etiketleri */}
+            <SvgText
+              x={canvasWidth / 2}
+              y={canvasHeight - 2}
+              fill="#2c3e50"
+              fontSize={12}
+              fontWeight="bold"
+              textAnchor="middle"
+            >
+              x (m)
+            </SvgText>
+            
+            <SvgText
+              x={10}
+              y={canvasHeight / 2}
+              fill="#2c3e50"
+              fontSize={12}
+              fontWeight="bold"
+              textAnchor="middle"
+              rotation="-90"
+              originX={10}
+              originY={canvasHeight / 2}
+            >
+              y (m)
+            </SvgText>
+            
+            {/* Yörünge */}
+            {trajectoryPath && (
+              <Path
+                d={trajectoryPath}
+                stroke="#3498db"
+                strokeWidth={2}
+                fill="none"
+              />
+            )}
+            
+            {/* Cisim */}
+            <Circle
+              cx={x}
+              cy={y}
+              r={4}
+              fill="#2ecc71"
+            />
+            
+            {/* Hız vektörü */}
+            <Line
+              x1={x}
+              y1={y}
+              x2={x + vx}
+              y2={y - vy}
+              stroke="#e74c3c"
+              strokeWidth={1}
+            />
+            
+            {/* Ok ucu */}
+            <Path
+              d={arrowPath}
+              fill="#e74c3c"
+              stroke="#e74c3c"
+            />
+            
+            {/* Bilgi metinleri */}
+            {infoTexts.map((text, index) => (
+              <SvgText
+                key={`info-${index}`}
+                x={canvasWidth - 120}
+                y={20 + index * 15}
+                fill="#2c3e50"
+                fontSize={12}
+                fontWeight="bold"
+                textAnchor="start"
+              >
+                {text}
+              </SvgText>
+            ))}
+          </Svg>
         </View>
 
         <FreeFallControls
@@ -248,10 +300,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 5,
+    elevation: 2,
   },
   canvas: {
     width: '100%',
     height: '100%',
+    backgroundColor: '#f5f5f5',
   },
 }); 

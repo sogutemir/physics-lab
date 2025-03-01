@@ -1,11 +1,9 @@
 import { useState, useRef } from 'react';
-import { View, Dimensions, StyleSheet } from 'react-native';
+import { View, Dimensions, StyleSheet, ScrollView } from 'react-native';
 import ExperimentLayout from '../../../components/ExperimentLayout';
-import { WebFreeFall } from './components/free-fall/WebFreeFall';
 import { MobileFreeFall } from './components/free-fall/MobileFreeFall';
 
 const { width, height } = Dimensions.get('window');
-const isMobile = width < 768;
 
 // Ref için tip tanımı
 type FreeFallRefType = {
@@ -16,23 +14,18 @@ type FreeFallRefType = {
 
 export default function FreeFallExperiment() {
   const [isRunning, setIsRunning] = useState(false);
-  const webFreeFallRef = useRef<FreeFallRefType>(null);
-  const mobileFreeFallRef = useRef<FreeFallRefType>(null);
+  const freeFallRef = useRef<FreeFallRefType>(null);
 
   const handleToggleSimulation = () => {
     if (isRunning) {
       // Deneyi durdur
-      if (isMobile && mobileFreeFallRef.current) {
-        mobileFreeFallRef.current.stopSimulation();
-      } else if (!isMobile && webFreeFallRef.current) {
-        webFreeFallRef.current.stopSimulation();
+      if (freeFallRef.current) {
+        freeFallRef.current.stopSimulation();
       }
     } else {
       // Deneyi başlat
-      if (isMobile && mobileFreeFallRef.current) {
-        mobileFreeFallRef.current.startSimulation();
-      } else if (!isMobile && webFreeFallRef.current) {
-        webFreeFallRef.current.startSimulation();
+      if (freeFallRef.current) {
+        freeFallRef.current.startSimulation();
       }
     }
     setIsRunning(!isRunning);
@@ -40,10 +33,8 @@ export default function FreeFallExperiment() {
 
   const handleReset = () => {
     // Deneyi sıfırla
-    if (isMobile && mobileFreeFallRef.current) {
-      mobileFreeFallRef.current.resetSimulation();
-    } else if (!isMobile && webFreeFallRef.current) {
-      webFreeFallRef.current.resetSimulation();
+    if (freeFallRef.current) {
+      freeFallRef.current.resetSimulation();
     }
     setIsRunning(false);
   };
@@ -60,26 +51,32 @@ export default function FreeFallExperiment() {
       onToggleSimulation={handleToggleSimulation}
       onReset={handleReset}
     >
-      <View style={styles.container}>
-        {isMobile ? (
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.container}>
           <MobileFreeFall 
-            ref={mobileFreeFallRef}
+            ref={freeFallRef}
             width={width}
-            height={height * 0.65}
+            height={height * 0.5}
           />
-        ) : (
-          <WebFreeFall 
-            ref={webFreeFallRef}
-            width={width}
-            height={height * 0.75}
-          />
-        )}
-      </View>
+        </View>
+      </ScrollView>
     </ExperimentLayout>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingBottom: 200, // Mobilde alt boşluğu artırdım
+  },
   container: {
     flex: 1,
     backgroundColor: '#f9f9f9',

@@ -1,142 +1,207 @@
-import { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, Animated, PanResponder, Text, Dimensions } from 'react-native';
-import ExperimentLayout from '../../../components/ExperimentLayout';
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, StyleSheet, Platform } from "react-native";
+import Slider from "@react-native-community/slider";
+import Svg, { Line, Circle, Path, Rect } from "react-native-svg";
+import ExperimentLayout from "../../../components/ExperimentLayout";
 
-const { width } = Dimensions.get('window');
-const SPRING_REST_HEIGHT = 100;
-const MAX_STRETCH = 150;
-const SPRING_CONSTANT = 0.5;
-const MASS = 1.0;
-const DAMPING = 0.98;
+// Fiziksel sabitler
+const CONSTANTS = {
+  g: 9.81,                // Yerçekimi ivmesi (m/s²)
+  BASE_SPRING_LENGTH: 100, // Yayın temel uzunluğu (piksel)
+  TOP_MARGIN: 50,         // Üst kenar boşluğu
+  MIN_MASS: 0.1,          // Minimum kütle (kg)
+  MAX_MASS: 2.0,          // Maximum kütle (kg)
+  MIN_SPRING_CONSTANT: 5,  // Minimum yay sabiti (N/m)
+  MAX_SPRING_CONSTANT: 50, // Maximum yay sabiti (N/m)
+  MIN_DAMPING: 0,         // Minimum sönümleme
+  MAX_DAMPING: 1,         // Maximum sönümleme
+  MIN_AMPLITUDE: 0.1,     // Minimum genlik (m)
+  MAX_AMPLITUDE: 1.0,     // Maximum genlik (m)
+  MIN_BASE_LENGTH: 0.25,  // Minimum temel uzunluk (m)
+  MAX_BASE_LENGTH: 1.0,   // Maximum temel uzunluk (m)
+};
+
+interface SpringMassState {
+  position: number;      // Denge konumundan sapma (metre)
+  velocity: number;      // Hız (m/s)
+  mass: number;         // Kütle (kg)
+  springConstant: number; // Yay sabiti (N/m)
+  damping: number;      // Sönümleme katsayısı
+  amplitude: number;    // Genlik (metre)
+  isRunning: boolean;   // Simülasyon çalışıyor mu?
+  time: number;         // Geçen süre (s)
+  kineticEnergy: number; // Kinetik enerji (J)
+  potentialEnergy: number; // Potansiyel enerji (J)
+  totalEnergy: number;  // Toplam enerji (J)
+  baseLength: number;   // Yayın temel uzunluğu (m)
+}
 
 export default function SpringMassExperiment() {
-  const [isRunning, setIsRunning] = useState(false);
-  const [displacement, setDisplacement] = useState(0);
-  const [velocity, setVelocity] = useState(0);
-  const [period, setPeriod] = useState(0);
-  
-  const springPosition = useRef(new Animated.Value(SPRING_REST_HEIGHT)).current;
-  const animationRef = useRef<number | null>(null);
-  const lastUpdateTime = useRef(Date.now());
-  const startTime = useRef<number | null>(null);
-  const oscillationCount = useRef(0);
-  const lastDirection = useRef<'up' | 'down' | null>(null);
-
-  const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onPanResponderGrant: () => {
-      if (isRunning) {
-        setIsRunning(false);
-        if (animationRef.current !== null) {
-          cancelAnimationFrame(animationRef.current);
-          animationRef.current = null;
-        }
-      }
-    },
-    onPanResponderMove: (_, gestureState) => {
-      const newPosition = SPRING_REST_HEIGHT + gestureState.dy;
-      // Limit the stretch
-      const clampedPosition = Math.min(Math.max(newPosition, SPRING_REST_HEIGHT - MAX_STRETCH), SPRING_REST_HEIGHT + MAX_STRETCH);
-      
-      springPosition.setValue(clampedPosition);
-      setDisplacement(clampedPosition - SPRING_REST_HEIGHT);
-    },
-    onPanResponderRelease: () => {
-      // Reset oscillation tracking when manually positioned
-      startTime.current = null;
-      oscillationCount.current = 0;
-      lastDirection.current = null;
-    },
+  const [state, setState] = useState<SpringMassState>({
+    position: 0,
+    velocity: 0,
+    mass: 1.0,
+    springConstant: 20,
+    damping: 0.1,
+    amplitude: 0.5,
+    isRunning: false,
+    time: 0,
+    kineticEnergy: 0,
+    potentialEnergy: 0,
+    totalEnergy: 0,
+    baseLength: 0.50,
   });
 
-  const toggleSimulation = () => {
-    setIsRunning(!isRunning);
-  };
+  const animationFrameRef = useRef<number>();
+  const lastTimeRef = useRef<number>(0);
 
-  const resetSimulation = () => {
-    setIsRunning(false);
-    setDisplacement(0);
-    setVelocity(0);
-    springPosition.setValue(SPRING_REST_HEIGHT);
-    setPeriod(0);
-    startTime.current = null;
-    oscillationCount.current = 0;
-    lastDirection.current = null;
-    
-    if (animationRef.current !== null) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
-  };
-
-  const updateSpring = () => {
-    if (!isRunning) return;
-
-    const now = Date.now();
-    const deltaTime = (now - lastUpdateTime.current) / 1000; // Convert to seconds
-    lastUpdateTime.current = now;
-
-    // Calculate force using Hooke's Law: F = -kx
-    const force = -SPRING_CONSTANT * displacement;
-    
-    // Calculate acceleration: a = F/m
-    const acceleration = force / MASS;
-    
-    // Update velocity and position
-    const newVelocity = (velocity + acceleration * deltaTime) * DAMPING;
-    const newDisplacement = displacement + newVelocity * deltaTime;
-    
-    setVelocity(newVelocity);
-    setDisplacement(newDisplacement);
-    
-    // Update spring position
-    springPosition.setValue(SPRING_REST_HEIGHT + newDisplacement);
-
-    // Track oscillations for period calculation
-    if (startTime.current === null) {
-      startTime.current = now;
+  const updatePhysics = (timestamp: number) => {
+    if (!lastTimeRef.current) {
+      lastTimeRef.current = timestamp;
+      animationFrameRef.current = requestAnimationFrame(updatePhysics);
+      return;
     }
 
-    // Detect direction changes to count oscillations
-    const currentDirection = newVelocity > 0 ? 'down' : 'up';
-    if (lastDirection.current !== null && currentDirection !== lastDirection.current && Math.abs(newDisplacement) < 5) {
-      oscillationCount.current += 0.5; // Half oscillation when direction changes near equilibrium
-      
-      if (oscillationCount.current >= 1) {
-        const elapsedTime = (now - startTime.current) / 1000; // seconds
-        const calculatedPeriod = elapsedTime / oscillationCount.current;
-        setPeriod(calculatedPeriod);
+    const dt = Math.min((timestamp - lastTimeRef.current) / 1000, 0.016);
+    lastTimeRef.current = timestamp;
+
+    setState((prev) => {
+      if (!prev.isRunning) return prev;
+
+      // İvme hesabı (F = -kx - bv)
+      const acceleration = (-prev.springConstant * prev.position - prev.damping * prev.velocity) / prev.mass;
+
+      // Hız ve konum güncelleme (Euler metodu)
+      const newVelocity = prev.velocity + acceleration * dt;
+      const newPosition = prev.position + newVelocity * dt;
+      const newTime = prev.time + dt;
+
+      // Enerji hesaplamaları
+      const kineticEnergy = 0.5 * prev.mass * Math.pow(newVelocity, 2);
+      const potentialEnergy = 0.5 * prev.springConstant * Math.pow(newPosition, 2);
+      const totalEnergy = kineticEnergy + potentialEnergy;
+
+      // Hareket çok küçükse durdur
+      const EPSILON = 0.001;
+      if (Math.abs(newPosition) < EPSILON && Math.abs(newVelocity) < EPSILON) {
+        return {
+          ...prev,
+          position: 0,
+          velocity: 0,
+          isRunning: false,
+          kineticEnergy: 0,
+          potentialEnergy: 0,
+          totalEnergy: 0,
+        };
       }
-    }
-    lastDirection.current = currentDirection;
 
-    animationRef.current = requestAnimationFrame(updateSpring);
+      return {
+        ...prev,
+        position: newPosition,
+        velocity: newVelocity,
+        time: newTime,
+        kineticEnergy,
+        potentialEnergy,
+        totalEnergy,
+      };
+    });
+
+    animationFrameRef.current = requestAnimationFrame(updatePhysics);
   };
 
   useEffect(() => {
-    if (isRunning) {
-      lastUpdateTime.current = Date.now();
-      animationRef.current = requestAnimationFrame(updateSpring);
-    } else if (animationRef.current !== null) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
+    if (state.isRunning) {
+      lastTimeRef.current = 0;
+      animationFrameRef.current = requestAnimationFrame(updatePhysics);
     }
-
     return () => {
-      if (animationRef.current !== null) {
-        cancelAnimationFrame(animationRef.current);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isRunning]);
+  }, [state.isRunning]);
 
-  // Calculate theoretical period
-  useEffect(() => {
-    // T = 2π√(m/k)
-    const theoreticalPeriod = 2 * Math.PI * Math.sqrt(MASS / SPRING_CONSTANT);
-    if (period === 0) {
-      setPeriod(theoreticalPeriod);
+  const handleToggleSimulation = () => {
+    setState(prev => {
+      if (!prev.isRunning) {
+        return {
+          ...prev,
+          isRunning: true,
+          position: prev.amplitude,
+          velocity: 0,
+          time: 0,
+        };
+      }
+      return { ...prev, isRunning: false };
+    });
+  };
+
+  const handleReset = () => {
+    setState(prev => ({
+      ...prev,
+      position: 0,
+      velocity: 0,
+      time: 0,
+      isRunning: false,
+      kineticEnergy: 0,
+      potentialEnergy: 0,
+      totalEnergy: 0,
+    }));
+  };
+
+  // Yay yolu hesaplama
+  const renderSpringPath = () => {
+    const springLength = CONSTANTS.BASE_SPRING_LENGTH + state.baseLength * 200 + state.position * 200;
+    const numCoils = 15;
+    const coilSpacing = springLength / numCoils;
+    const coilWidth = 30;
+    const startY = CONSTANTS.TOP_MARGIN;
+    const endY = startY + springLength;
+
+    let path = `M ${300 / 2} ${startY} `; // Başlangıç noktası
+    path += `L ${300 / 2} ${startY + 10} `; // İlk düz çizgi
+
+    // Yay sarmalları
+    for (let i = 0; i < numCoils; i++) {
+      const y = startY + 10 + i * coilSpacing;
+      if (i % 2 === 0) {
+        path += `Q ${300 / 2 - coilWidth} ${y + coilSpacing / 2} ${300 / 2} ${y + coilSpacing} `;
+      } else {
+        path += `Q ${300 / 2 + coilWidth} ${y + coilSpacing / 2} ${300 / 2} ${y + coilSpacing} `;
+      }
     }
-  }, []);
+
+    path += `L ${300 / 2} ${endY}`; // Son düz çizgi
+    return path;
+  };
+
+  // Deney açıklamaları
+  const description = `
+    Yay-Kütle sistemi, basit harmonik hareketin temel bir örneğidir. Bu deneyde, bir yaya bağlı kütlenin 
+    salınım hareketini inceleyebilirsiniz. Sistemin davranışını etkileyen parametreler:
+    
+    - Kütle: Sistemin eylemsizliğini belirler
+    - Yay sabiti: Yayın sertliğini belirler
+    - Sönümleme: Sistemdeki enerji kaybını temsil eder
+    - Genlik: İlk çekme mesafesini belirler
+    
+    Sistemin toplam enerjisi, kinetik ve potansiyel enerjinin toplamıdır. Sönümleme olmadığında 
+    toplam enerji korunur.
+  `;
+
+  const descriptionEn = `
+    The Spring-Mass system is a fundamental example of simple harmonic motion. In this experiment, 
+    you can study the oscillatory motion of a mass attached to a spring. Parameters affecting the 
+    system's behavior:
+    
+    - Mass: Determines the system's inertia
+    - Spring constant: Determines the spring's stiffness
+    - Damping: Represents energy loss in the system
+    - Amplitude: Sets the initial displacement
+    
+    The total energy of the system is the sum of kinetic and potential energies. Without damping, 
+    total energy is conserved.
+  `;
 
   return (
     <ExperimentLayout
@@ -144,63 +209,143 @@ export default function SpringMassExperiment() {
       titleEn="Spring-Mass System"
       difficulty="Başlangıç"
       difficultyEn="Beginner"
-      description="Yay-kütle sistemi, bir yaya bağlı bir kütleden oluşan fiziksel bir sistemdir. Hooke Yasası'na göre, yayın uyguladığı kuvvet, yayın uzama veya sıkışma miktarıyla doğru orantılıdır (F = -kx). Bu deneyde, yay-kütle sisteminin harmonik hareketini ve periyodunu gözlemleyebilirsiniz. Kütleyi hareket ettirmek için ekrana dokunun ve sürükleyin."
-      descriptionEn="A spring-mass system is a physical system consisting of a mass attached to a spring. According to Hooke's Law, the force exerted by the spring is directly proportional to the amount of extension or compression of the spring (F = -kx). In this experiment, you can observe the harmonic motion and period of the spring-mass system. Touch and drag the screen to move the mass."
-      isRunning={isRunning}
-      onToggleSimulation={toggleSimulation}
-      onReset={resetSimulation}
+      description={description}
+      descriptionEn={descriptionEn}
+      isRunning={state.isRunning}
+      onToggleSimulation={handleToggleSimulation}
+      onReset={handleReset}
     >
-      <View style={styles.experimentArea}>
-        <View style={styles.springContainer}>
-          <View style={styles.ceiling} />
-          
-          <View style={styles.springWrapper}>
-            <Animated.View
-              style={[
-                styles.spring,
-                {
-                  height: springPosition,
-                },
-              ]}
-            >
-              {/* Spring coils visualization */}
-              {Array.from({ length: 10 }).map((_, index) => (
-                <View 
-                  key={index} 
-                  style={[
-                    styles.springCoil,
-                    { top: (index + 1) * 10 }
-                  ]} 
-                />
-              ))}
-            </Animated.View>
-          </View>
-          
-          <Animated.View
-            style={[
-              styles.mass,
-              {
-                transform: [
-                  { translateY: Animated.subtract(springPosition, SPRING_REST_HEIGHT) },
-                ],
-              },
-            ]}
-            {...panResponder.panHandlers}
-          />
+      <View style={styles.container}>
+        <View style={styles.simulation}>
+          <Svg
+            width="100%"
+            height="100%"
+            viewBox="0 0 300 400"
+            preserveAspectRatio="xMidYMid meet"
+          >
+            {/* Sabit tavan */}
+            <Rect
+              x={300 / 2 - 50}
+              y={CONSTANTS.TOP_MARGIN - 10}
+              width={100}
+              height={10}
+              fill="#2c3e50"
+              stroke="#fff"
+              strokeWidth={1}
+            />
+
+            {/* Yay */}
+            <Path
+              d={renderSpringPath()}
+              stroke="#3498db"
+              strokeWidth={2.5}
+              fill="none"
+            />
+
+            {/* Kütle */}
+            <Circle
+              cx={300 / 2}
+              cy={CONSTANTS.TOP_MARGIN + CONSTANTS.BASE_SPRING_LENGTH + state.baseLength * 200 + state.position * 200}
+              r={20 + state.mass * 10}
+              fill="#e74c3c"
+              stroke="#fff"
+              strokeWidth={2}
+            />
+          </Svg>
         </View>
 
-        <View style={styles.measurementsContainer}>
-          <View style={styles.measurementItem}>
-            <Text style={styles.measurementLabel}>Uzama / Displacement:</Text>
-            <Text style={styles.measurementValue}>{displacement.toFixed(1)} cm</Text>
+        <View style={styles.controls}>
+          <View style={styles.sliders}>
+            <View style={styles.sliderRow}>
+              <Text style={styles.sliderLabel}>
+                Yay Uzunluğu: {state.baseLength.toFixed(2)} m
+              </Text>
+              <Slider
+                style={styles.slider}
+                minimumValue={CONSTANTS.MIN_BASE_LENGTH}
+                maximumValue={CONSTANTS.MAX_BASE_LENGTH}
+                value={state.baseLength}
+                onValueChange={(value) => setState(prev => ({ ...prev, baseLength: value }))}
+                minimumTrackTintColor="#3498db"
+                maximumTrackTintColor="#bdc3c7"
+                thumbTintColor="#3498db"
+              />
+            </View>
+
+            <View style={styles.sliderRow}>
+              <Text style={styles.sliderLabel}>
+                Kütle: {state.mass.toFixed(1)} kg
+              </Text>
+              <Slider
+                style={styles.slider}
+                minimumValue={CONSTANTS.MIN_MASS}
+                maximumValue={CONSTANTS.MAX_MASS}
+                value={state.mass}
+                onValueChange={(value) => setState(prev => ({ ...prev, mass: value }))}
+                minimumTrackTintColor="#3498db"
+                maximumTrackTintColor="#bdc3c7"
+                thumbTintColor="#3498db"
+              />
+            </View>
+
+            <View style={styles.sliderRow}>
+              <Text style={styles.sliderLabel}>
+                Yay Sabiti: {state.springConstant.toFixed(1)} N/m
+              </Text>
+              <Slider
+                style={styles.slider}
+                minimumValue={CONSTANTS.MIN_SPRING_CONSTANT}
+                maximumValue={CONSTANTS.MAX_SPRING_CONSTANT}
+                value={state.springConstant}
+                onValueChange={(value) => setState(prev => ({ ...prev, springConstant: value }))}
+                minimumTrackTintColor="#3498db"
+                maximumTrackTintColor="#bdc3c7"
+                thumbTintColor="#3498db"
+              />
+            </View>
+
+            <View style={styles.sliderRow}>
+              <Text style={styles.sliderLabel}>
+                Sönümleme: {state.damping.toFixed(2)}
+              </Text>
+              <Slider
+                style={styles.slider}
+                minimumValue={CONSTANTS.MIN_DAMPING}
+                maximumValue={CONSTANTS.MAX_DAMPING}
+                value={state.damping}
+                onValueChange={(value) => setState(prev => ({ ...prev, damping: value }))}
+                minimumTrackTintColor="#3498db"
+                maximumTrackTintColor="#bdc3c7"
+                thumbTintColor="#3498db"
+              />
+            </View>
+
+            <View style={styles.sliderRow}>
+              <Text style={styles.sliderLabel}>
+                Genlik: {state.amplitude.toFixed(2)} m
+              </Text>
+              <Slider
+                style={styles.slider}
+                minimumValue={CONSTANTS.MIN_AMPLITUDE}
+                maximumValue={CONSTANTS.MAX_AMPLITUDE}
+                value={state.amplitude}
+                onValueChange={(value) => setState(prev => ({ ...prev, amplitude: value }))}
+                minimumTrackTintColor="#3498db"
+                maximumTrackTintColor="#bdc3c7"
+                thumbTintColor="#3498db"
+              />
+            </View>
           </View>
-          <View style={styles.measurementItem}>
-            <Text style={styles.measurementLabel}>Hız / Velocity:</Text>
-            <Text style={styles.measurementValue}>{velocity.toFixed(2)} cm/s</Text>
-          </View>
-          <View style={styles.measurementItem}>
-            <Text style={styles.measurementLabel}>Periyot / Period:</Text>
-            <Text style={styles.measurementValue}>{period.toFixed(2)} s</Text>
+
+          <View style={styles.info}>
+            <View style={styles.infoContainer}>
+              <Text style={styles.infoItem}>Zaman: {state.time.toFixed(2)} s</Text>
+              <Text style={styles.infoItem}>Konum: {state.position.toFixed(3)} m</Text>
+              <Text style={styles.infoItem}>Hız: {state.velocity.toFixed(2)} m/s</Text>
+              <Text style={styles.infoItem}>Kinetik Enerji: {state.kineticEnergy.toFixed(2)} J</Text>
+              <Text style={styles.infoItem}>Potansiyel Enerji: {state.potentialEnergy.toFixed(2)} J</Text>
+              <Text style={styles.infoItem}>Toplam Enerji: {state.totalEnergy.toFixed(2)} J</Text>
+            </View>
           </View>
         </View>
       </View>
@@ -209,81 +354,56 @@ export default function SpringMassExperiment() {
 }
 
 const styles = StyleSheet.create({
-  experimentArea: {
+  container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 10,
   },
-  springContainer: {
+  simulation: {
+    aspectRatio: 0.75,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    backgroundColor: '#f5f5f5',
+    width: '100%',
+    marginBottom: 10,
+  },
+  controls: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+  },
+  sliders: {
+    marginBottom: 10,
+  },
+  sliderRow: {
+    marginBottom: 10,
+  },
+  sliderLabel: {
+    fontSize: 14,
+    marginBottom: 2,
+    color: '#2c3e50',
+  },
+  slider: {
     width: '100%',
+    height: 30,
   },
-  ceiling: {
-    width: '100%',
-    height: 20,
-    backgroundColor: '#95a5a6',
-    position: 'absolute',
-    top: 0,
+  info: {
+    backgroundColor: '#e3f2fd',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 8,
   },
-  springWrapper: {
-    alignItems: 'center',
-    position: 'absolute',
-    top: 20,
-    left: 0,
-    right: 0,
-  },
-  spring: {
-    width: 20,
-    backgroundColor: 'transparent',
-    position: 'relative',
-  },
-  springCoil: {
-    position: 'absolute',
-    width: 20,
-    height: 4,
-    backgroundColor: '#7f8c8d',
-    borderRadius: 2,
-  },
-  mass: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#3498db',
-    position: 'absolute',
-    top: SPRING_REST_HEIGHT,
-    alignSelf: 'center',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-  measurementsContainer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 10,
-    padding: 15,
+  infoContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  measurementItem: {
-    alignItems: 'center',
-  },
-  measurementLabel: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    marginBottom: 5,
-  },
-  measurementValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  infoItem: {
+    width: '48%',
+    padding: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#bbdefb',
+    fontSize: 12,
     color: '#2c3e50',
+    marginBottom: 4,
   },
 });

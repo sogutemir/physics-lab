@@ -8,6 +8,7 @@ export default function MechanicsLayout() {
       <Stack.Screen name="free-fall" options={{ headerShown: false }} />
       <Stack.Screen name="pendulum" options={{ headerShown: false }} />
       <Stack.Screen name="spring-mass" options={{ headerShown: false }} />
+      <Stack.Screen name="weighted-pulley" options={{ headerShown: false }} />
     </Stack>
   );
 } 

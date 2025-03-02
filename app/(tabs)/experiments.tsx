@@ -69,6 +69,17 @@ const experiments: Experiment[] = [
   },
   {
     id: '5',
+    title: 'Ağırlıklı Makara',
+    titleEn: 'Weighted Pulley',
+    category: 'mechanics',
+    difficulty: 'Orta Seviye',
+    difficultyEn: 'Intermediate',
+    description: 'Ağırlıklı makara sistemi ve açısal hareket',
+    descriptionEn: 'Weighted pulley system and angular motion',
+    route: '/experiments/mechanics/weighted-pulley' as any,
+  },
+  {
+    id: '6',
     title: 'Momentum ve Çarpışmalar',
     titleEn: 'Momentum and Collisions',
     category: 'mechanics',
@@ -79,7 +90,7 @@ const experiments: Experiment[] = [
     route: '/experiments/mechanics/collisions',
   },
   {
-    id: '6',
+    id: '7',
     title: 'Atwood Makinesi',
     titleEn: 'Atwood Machine',
     category: 'mechanics',
@@ -90,7 +101,7 @@ const experiments: Experiment[] = [
     route: '/experiments/mechanics/atwood-machine',
   },
   {
-    id: '7',
+    id: '8',
     title: 'Dinamik Sürtünme',
     titleEn: 'Dynamic Friction',
     category: 'mechanics',
@@ -101,7 +112,7 @@ const experiments: Experiment[] = [
     route: '/experiments/mechanics/friction',
   },
   {
-    id: '8',
+    id: '9',
     title: 'Düzgün İvmeli Hareket',
     titleEn: 'Uniform Accelerated Motion',
     category: 'mechanics',
@@ -112,7 +123,7 @@ const experiments: Experiment[] = [
     route: '/experiments/mechanics/accelerated-motion',
   },
   {
-    id: '9',
+    id: '10',
     title: 'Serbest Düşme',
     titleEn: 'Free Fall',
     category: 'mechanics',
@@ -123,7 +134,7 @@ const experiments: Experiment[] = [
     route: '/experiments/mechanics/free-fall',
   },
   {
-    id: '10',
+    id: '11',
     title: 'Vektör Toplama',
     titleEn: 'Vector Addition',
     category: 'mechanics',
@@ -134,7 +145,7 @@ const experiments: Experiment[] = [
     route: '/experiments/mechanics/vector-addition' as any,
   },
   {
-    id: '11',
+    id: '12',
     title: 'Moment Dengesi',
     titleEn: 'Torque Balance',
     category: 'mechanics',
@@ -145,7 +156,7 @@ const experiments: Experiment[] = [
     route: '/experiments/mechanics/torque-balance',
   },
   {
-    id: '12',
+    id: '13',
     title: 'Çift Yarık Deneyi',
     titleEn: 'Double Slit Experiment',
     category: 'waves',
@@ -156,7 +167,7 @@ const experiments: Experiment[] = [
     route: '/experiments/waves/double-slit',
   },
   {
-    id: '13',
+    id: '14',
     title: 'Dalga Girişimi',
     titleEn: 'Wave Interference',
     category: 'waves',
@@ -167,7 +178,7 @@ const experiments: Experiment[] = [
     route: '/experiments/waves/wave-interference',
   },
   {
-    id: '14',
+    id: '15',
     title: 'Enine Dalga',
     titleEn: 'Transverse Wave',
     category: 'waves',
@@ -178,7 +189,7 @@ const experiments: Experiment[] = [
     route: '/experiments/waves/transverse-wave',
   },
   {
-    id: '15',
+    id: '16',
     title: 'Optik Sistemler',
     titleEn: 'Optical Systems',
     category: 'waves',
@@ -189,7 +200,7 @@ const experiments: Experiment[] = [
     route: '/experiments/waves/optical-systems',
   },
   {
-    id: '16',
+    id: '17',
     title: 'Doppler Etkisi',
     titleEn: 'Doppler Effect',
     category: 'waves',
@@ -200,7 +211,7 @@ const experiments: Experiment[] = [
     route: '/experiments/waves/doppler-effect',
   },
   {
-    id: '17',
+    id: '18',
     title: 'Elektrik Alan',
     titleEn: 'Electric Field',
     category: 'electricity',
@@ -211,7 +222,7 @@ const experiments: Experiment[] = [
     route: '/experiments/electricity/electric-field',
   },
   {
-    id: '18',
+    id: '19',
     title: 'RLC Devresi',
     titleEn: 'RLC Circuit',
     category: 'electricity',
@@ -222,7 +233,7 @@ const experiments: Experiment[] = [
     route: '/experiments/electricity/rlc-circuit',
   },
   {
-    id: '19',
+    id: '20',
     title: 'Transformatör',
     titleEn: 'Transformer',
     category: 'electricity',
@@ -233,7 +244,7 @@ const experiments: Experiment[] = [
     route: '/experiments/electricity/transformer',
   },
   {
-    id: '20',
+    id: '21',
     title: 'Göreceli Hareket',
     titleEn: 'Relative Motion',
     category: 'basics',
@@ -244,7 +255,7 @@ const experiments: Experiment[] = [
     route: '/experiments/basics/relative-motion',
   },
   {
-    id: '21',
+    id: '22',
     title: 'Coriolis Hareketi',
     titleEn: 'Coriolis Effect',
     category: 'basics',

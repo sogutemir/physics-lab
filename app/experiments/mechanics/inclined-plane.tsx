@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Dimensions, ScrollView, Platform } from 'react-native';
 import Slider from '@react-native-community/slider';
 import Svg, { Path, Circle, Line, G, Defs, Marker, Polygon, Rect } from 'react-native-svg';
 import ExperimentLayout from '../../../components/ExperimentLayout';
@@ -243,147 +243,192 @@ export default function InclinedPlaneExperiment() {
       onToggleSimulation={handleToggleSimulation}
       onReset={handleReset}
     >
-      <View style={styles.container}>
-        <View style={styles.simulation}>
-          <Svg
-            width="100%"
-            height="100%"
-            viewBox="0 0 300 200"
-            preserveAspectRatio="xMidYMid meet"
-          >
-            {/* Eğik düzlem */}
-            <Path
-              d={`M 30,170 
-                  L ${30 + planeEndX * 0.6},${170 - planeEndY * 0.6} 
-                  L ${30 + planeEndX * 0.6},170 Z`}
-              fill="#90a4ae"
-              stroke="black"
-              strokeWidth={1}
-            />
-            
-            {/* Kare cisim ve kuvvet vektörü */}
-            <G transform={`translate(${30 + state.position.x * Math.cos(angleRad) * 0.6},${170 - state.position.x * Math.sin(angleRad) * 0.6})`}>
-              <G transform={`rotate(${-state.angle})`}>
-                <Rect
-                  x={-8}
-                  y={-16}
-                  width={16}
-                  height={16}
-                  fill="#f44336"
-                />
-                
-                {/* Uygulanan kuvvet vektörü */}
-                {state.appliedForce !== 0 && (
-                  <Line
-                    x1={0}
-                    y1={-8}
-                    x2={state.appliedForce > 0 ? 25 : -25}
-                    y2={-8}
-                    stroke="#2196f3"
-                    strokeWidth={2}
-                    markerEnd="url(#arrowhead)"
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.container}>
+          <View style={styles.simulation}>
+            <Svg
+              width="100%"
+              height="100%"
+              viewBox="0 0 300 200"
+              preserveAspectRatio="xMidYMid meet"
+            >
+              {/* Eğik düzlem */}
+              <Path
+                d={`M 30,170 
+                    L ${30 + planeEndX * 0.6},${170 - planeEndY * 0.6} 
+                    L ${30 + planeEndX * 0.6},170 Z`}
+                fill="#90a4ae"
+                stroke="black"
+                strokeWidth={1}
+              />
+              
+              {/* Kare cisim ve kuvvet vektörü */}
+              <G transform={`translate(${30 + state.position.x * Math.cos(angleRad) * 0.6},${170 - state.position.x * Math.sin(angleRad) * 0.6})`}>
+                <G transform={`rotate(${-state.angle})`}>
+                  <Rect
+                    x={-8}
+                    y={-16}
+                    width={16}
+                    height={16}
+                    fill="#f44336"
                   />
-                )}
+                  
+                  {/* Uygulanan kuvvet vektörü */}
+                  {state.appliedForce !== 0 && (
+                    <Line
+                      x1={0}
+                      y1={-8}
+                      x2={state.appliedForce > 0 ? 25 : -25}
+                      y2={-8}
+                      stroke="#2196f3"
+                      strokeWidth={2}
+                      markerEnd="url(#arrowhead)"
+                    />
+                  )}
+                </G>
               </G>
-            </G>
 
-            {/* Ok ucu tanımı */}
-            <Defs>
-              <Marker
-                id="arrowhead"
-                markerWidth="6"
-                markerHeight="4"
-                refX="6"
-                refY="2"
-                orient="auto"
-              >
-                <Polygon points="0,0 6,2 0,4" fill="#2196f3" />
-              </Marker>
-            </Defs>
-          </Svg>
-        </View>
-
-        <View style={styles.controls}>
-          <View style={styles.sliders}>
-            <Text style={styles.sliderLabel}>
-              Açı: {state.angle.toFixed(1)}°
-            </Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={CONSTANTS.MIN_ANGLE}
-              maximumValue={CONSTANTS.MAX_ANGLE}
-              value={state.angle}
-              onValueChange={(value) => setState(prev => ({ ...prev, angle: value }))}
-              minimumTrackTintColor="#3498db"
-              maximumTrackTintColor="#bdc3c7"
-              thumbTintColor="#3498db"
-            />
-            
-            <Text style={styles.sliderLabel}>
-              Kütle: {state.mass.toFixed(1)} kg
-            </Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={CONSTANTS.MIN_MASS}
-              maximumValue={CONSTANTS.MAX_MASS}
-              step={0.1}
-              value={state.mass}
-              onValueChange={(value) => setState(prev => ({ ...prev, mass: value }))}
-              minimumTrackTintColor="#3498db"
-              maximumTrackTintColor="#bdc3c7"
-              thumbTintColor="#3498db"
-            />
-            
-            <Text style={styles.sliderLabel}>
-              Sürtünme Katsayısı: {state.friction.toFixed(2)}
-            </Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={CONSTANTS.MIN_FRICTION}
-              maximumValue={CONSTANTS.MAX_FRICTION}
-              step={0.01}
-              value={state.friction}
-              onValueChange={(value) => setState(prev => ({ ...prev, friction: value }))}
-              minimumTrackTintColor="#3498db"
-              maximumTrackTintColor="#bdc3c7"
-              thumbTintColor="#3498db"
-            />
-            
-            <Text style={styles.sliderLabel}>
-              Uygulanan Kuvvet: {state.appliedForce.toFixed(1)} N
-            </Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={CONSTANTS.MIN_FORCE}
-              maximumValue={CONSTANTS.MAX_FORCE}
-              value={state.appliedForce}
-              onValueChange={(value) => setState(prev => ({ ...prev, appliedForce: value }))}
-              minimumTrackTintColor="#3498db"
-              maximumTrackTintColor="#bdc3c7"
-              thumbTintColor="#3498db"
-            />
+              {/* Ok ucu tanımı */}
+              <Defs>
+                <Marker
+                  id="arrowhead"
+                  markerWidth="6"
+                  markerHeight="4"
+                  refX="6"
+                  refY="2"
+                  orient="auto"
+                >
+                  <Polygon points="0,0 6,2 0,4" fill="#2196f3" />
+                </Marker>
+              </Defs>
+            </Svg>
           </View>
 
-          <View style={styles.info}>
-            <View style={styles.infoContainer}>
-              <Text style={styles.infoItem}>Hız: {state.velocity.toFixed(2)} m/s</Text>
-              <Text style={styles.infoItem}>İvme: {state.acceleration.toFixed(2)} m/s²</Text>
-              <Text style={styles.infoItem}>Net Kuvvet: {forces.net.toFixed(2)} N</Text>
-              <Text style={styles.infoItem}>Normal Kuvvet: {forces.normal.toFixed(2)} N</Text>
-              <Text style={styles.infoItem}>Sürtünme Kuvveti: {forces.friction.toFixed(2)} N</Text>
-              <Text style={styles.infoItem}>Ağırlık: {forces.gravity.toFixed(2)} N</Text>
+          <View style={styles.controls}>
+            <View style={styles.sliders}>
+              <View style={styles.sliderContainer}>
+                <View style={styles.sliderHeader}>
+                  <Text style={styles.sliderLabel}>Açı</Text>
+                  <Text style={styles.sliderValue}>{state.angle.toFixed(1)}°</Text>
+                </View>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={CONSTANTS.MIN_ANGLE}
+                  maximumValue={CONSTANTS.MAX_ANGLE}
+                  value={state.angle}
+                  onValueChange={(value) => setState(prev => ({ ...prev, angle: value }))}
+                  minimumTrackTintColor="#3498db"
+                  maximumTrackTintColor="#bdc3c7"
+                  thumbTintColor="#3498db"
+                />
+              </View>
+              
+              <View style={styles.sliderContainer}>
+                <View style={styles.sliderHeader}>
+                  <Text style={styles.sliderLabel}>Kütle</Text>
+                  <Text style={styles.sliderValue}>{state.mass.toFixed(1)} kg</Text>
+                </View>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={CONSTANTS.MIN_MASS}
+                  maximumValue={CONSTANTS.MAX_MASS}
+                  step={0.1}
+                  value={state.mass}
+                  onValueChange={(value) => setState(prev => ({ ...prev, mass: value }))}
+                  minimumTrackTintColor="#3498db"
+                  maximumTrackTintColor="#bdc3c7"
+                  thumbTintColor="#3498db"
+                />
+              </View>
+              
+              <View style={styles.sliderContainer}>
+                <View style={styles.sliderHeader}>
+                  <Text style={styles.sliderLabel}>Sürtünme Katsayısı</Text>
+                  <Text style={styles.sliderValue}>{state.friction.toFixed(2)}</Text>
+                </View>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={CONSTANTS.MIN_FRICTION}
+                  maximumValue={CONSTANTS.MAX_FRICTION}
+                  step={0.01}
+                  value={state.friction}
+                  onValueChange={(value) => setState(prev => ({ ...prev, friction: value }))}
+                  minimumTrackTintColor="#3498db"
+                  maximumTrackTintColor="#bdc3c7"
+                  thumbTintColor="#3498db"
+                />
+              </View>
+              
+              <View style={styles.sliderContainer}>
+                <View style={styles.sliderHeader}>
+                  <Text style={styles.sliderLabel}>Uygulanan Kuvvet</Text>
+                  <Text style={styles.sliderValue}>{state.appliedForce.toFixed(1)} N</Text>
+                </View>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={CONSTANTS.MIN_FORCE}
+                  maximumValue={CONSTANTS.MAX_FORCE}
+                  value={state.appliedForce}
+                  onValueChange={(value) => setState(prev => ({ ...prev, appliedForce: value }))}
+                  minimumTrackTintColor="#3498db"
+                  maximumTrackTintColor="#bdc3c7"
+                  thumbTintColor="#3498db"
+                />
+              </View>
+            </View>
+
+            <View style={styles.info}>
+              <Text style={styles.infoTitle}>Ölçüm Değerleri</Text>
+              <View style={styles.infoGrid}>
+                <View style={styles.infoItem}>
+                  <Text style={styles.infoLabel}>Hız</Text>
+                  <Text style={styles.infoValue}>{state.velocity.toFixed(2)} m/s</Text>
+                </View>
+                <View style={styles.infoItem}>
+                  <Text style={styles.infoLabel}>İvme</Text>
+                  <Text style={styles.infoValue}>{state.acceleration.toFixed(2)} m/s²</Text>
+                </View>
+                <View style={styles.infoItem}>
+                  <Text style={styles.infoLabel}>Net Kuvvet</Text>
+                  <Text style={styles.infoValue}>{forces.net.toFixed(2)} N</Text>
+                </View>
+                <View style={styles.infoItem}>
+                  <Text style={styles.infoLabel}>Normal Kuvvet</Text>
+                  <Text style={styles.infoValue}>{forces.normal.toFixed(2)} N</Text>
+                </View>
+                <View style={styles.infoItem}>
+                  <Text style={styles.infoLabel}>Sürtünme Kuvveti</Text>
+                  <Text style={styles.infoValue}>{forces.friction.toFixed(2)} N</Text>
+                </View>
+                <View style={styles.infoItem}>
+                  <Text style={styles.infoLabel}>Ağırlık</Text>
+                  <Text style={styles.infoValue}>{forces.gravity.toFixed(2)} N</Text>
+                </View>
+              </View>
             </View>
           </View>
         </View>
-      </View>
+      </ScrollView>
     </ExperimentLayout>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingBottom: Platform.OS === 'web' ? 50 : 200,
+  },
   container: {
     flex: 1,
-    padding: 10,
+    padding: 16,
   },
   simulation: {
     aspectRatio: 1.5,
@@ -393,42 +438,76 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#f5f5f5',
     width: '100%',
-    marginBottom: 10,
+    marginBottom: 16,
   },
   controls: {
     flex: 1,
   },
   sliders: {
-    marginBottom: 10,
+    marginBottom: 16,
+  },
+  sliderContainer: {
+    marginBottom: 16,
+  },
+  sliderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   sliderLabel: {
     fontSize: 14,
-    marginBottom: 2,
+    fontWeight: 'bold',
     color: '#2c3e50',
+  },
+  sliderValue: {
+    fontSize: 14,
+    color: '#7f8c8d',
   },
   slider: {
     width: '100%',
-    height: 30,
-    marginBottom: 10,
+    height: 40,
   },
   info: {
-    backgroundColor: '#e3f2fd',
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 8,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      },
+      default: {
+        elevation: 2
+      }
+    })
   },
-  infoContainer: {
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: '#e9ecef',
+    paddingBottom: 8,
+  },
+  infoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    marginHorizontal: -8,
   },
   infoItem: {
-    width: '48%',
-    padding: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: '#bbdefb',
+    width: '50%',
+    paddingHorizontal: 8,
+    marginBottom: 12,
+  },
+  infoLabel: {
     fontSize: 12,
-    color: '#2c3e50',
+    color: '#7f8c8d',
     marginBottom: 4,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#2c3e50',
   },
 }); 

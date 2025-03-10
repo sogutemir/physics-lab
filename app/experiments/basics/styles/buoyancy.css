@@ -1,0 +1,131 @@
+/* Sıvı konteyneri stilleri */
+.liquid-container {
+  position: relative;
+  overflow: hidden;
+  background: rgba(235, 247, 255, 0.8);
+  transition: background 0.5s ease;
+}
+
+.liquid-wave {
+  position: absolute;
+  width: 100%;
+  height: 20px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), transparent);
+  opacity: 0.5;
+  animation: wave 8s ease-in-out infinite;
+}
+
+.liquid-wave:nth-child(2) {
+  animation-delay: -2s;
+  opacity: 0.3;
+}
+
+.liquid-wave:nth-child(3) {
+  animation-delay: -4s;
+  opacity: 0.2;
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: translateX(-100%) translateY(0) scaleY(1);
+  }
+  50% {
+    transform: translateX(100%) translateY(-10px) scaleY(1.1);
+  }
+}
+
+/* Nesne stilleri */
+.object {
+  position: absolute;
+  border-radius: 8px;
+  transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Yüzme ve batma animasyonları */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-8px) rotate(-2deg);
+  }
+  75% {
+    transform: translateY(-4px) rotate(2deg);
+  }
+}
+
+@keyframes sink {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(8px) rotate(2deg);
+  }
+  75% {
+    transform: translateY(4px) rotate(-2deg);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-sink {
+  animation: sink 4s ease-in-out infinite;
+}
+
+/* Slider stilleri */
+input[type='range'] {
+  -webkit-appearance: none;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  background-size: 70% 100%;
+  background-repeat: no-repeat;
+  transition: all 0.3s ease;
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+input[type='range']::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 10px rgba(59, 130, 246, 0.1);
+  transform: scale(1.1);
+}
+
+input[type='range']::-webkit-slider-thumb:active {
+  transform: scale(1.2);
+}
+
+/* Yeni pozisyonlara geçiş için zıplama efekti */
+@keyframes gentle-bounce {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-12px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+.bounce-enter {
+  animation: gentle-bounce 1.5s;
+}

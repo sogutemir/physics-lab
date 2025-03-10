@@ -272,6 +272,17 @@ const experiments: Experiment[] = [
     descriptionEn: 'Coriolis effect and rotating reference frames',
     route: '/experiments/basics/coriolis-effect',
   },
+  {
+    id: '23',
+    title: 'Kaldırma Kuvveti',
+    titleEn: 'Buoyancy',
+    category: 'basics',
+    difficulty: 'Orta Seviye',
+    difficultyEn: 'Intermediate',
+    description: 'Kaldırma kuvveti ve yoğunluk etkisi',
+    descriptionEn: 'Buoyancy and density effect',
+    route: '/experiments/basics/buoyancy',
+  },
 ];
 
 // Category translations for display

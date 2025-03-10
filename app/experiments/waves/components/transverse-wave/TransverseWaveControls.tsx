@@ -1,6 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import Slider from '@react-native-community/slider';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+} from 'react-native';
 import { useLanguage } from '../../../../../components/LanguageContext';
 import { TransverseWaveControlsProps } from './types';
 
@@ -16,6 +21,50 @@ export const TransverseWaveControls: React.FC<TransverseWaveControlsProps> = ({
   onPeriodGraphToggle,
 }) => {
   const { t } = useLanguage();
+  const [localAmplitude, setLocalAmplitude] = useState(
+    state.amplitude.toString()
+  );
+  const [localWavelength, setLocalWavelength] = useState(
+    state.wavelength.toString()
+  );
+  const [localWaveSpeed, setLocalWaveSpeed] = useState(
+    state.waveSpeed.toString()
+  );
+  const [localMarkedPoints, setLocalMarkedPoints] = useState(
+    state.markedPoints.length.toString()
+  );
+
+  const handleAmplitudeChange = (text: string) => {
+    setLocalAmplitude(text);
+    const value = parseInt(text);
+    if (!isNaN(value) && value >= 10 && value <= 100) {
+      onAmplitudeChange(value);
+    }
+  };
+
+  const handleWavelengthChange = (text: string) => {
+    setLocalWavelength(text);
+    const value = parseInt(text);
+    if (!isNaN(value) && value >= 50 && value <= 400) {
+      onWavelengthChange(value);
+    }
+  };
+
+  const handleWaveSpeedChange = (text: string) => {
+    setLocalWaveSpeed(text);
+    const value = parseInt(text);
+    if (!isNaN(value) && value >= 10 && value <= 100) {
+      onSpeedChange(value);
+    }
+  };
+
+  const handleMarkedPointsChange = (text: string) => {
+    setLocalMarkedPoints(text);
+    const value = parseInt(text);
+    if (!isNaN(value) && value >= 1 && value <= 5) {
+      onMarkedPointsChange(value);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -23,74 +72,142 @@ export const TransverseWaveControls: React.FC<TransverseWaveControlsProps> = ({
         <Text style={styles.label}>
           {t('Genlik', 'Amplitude')}: {state.amplitude.toFixed(0)}
         </Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={10}
-          maximumValue={100}
-          step={5}
-          value={state.amplitude}
-          onValueChange={onAmplitudeChange}
-          minimumTrackTintColor="#4263eb"
-          maximumTrackTintColor="#e9ecef"
-          thumbTintColor="#4263eb"
-        />
+        <View style={styles.inputContainer}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              const newValue = Math.max(10, state.amplitude - 5);
+              onAmplitudeChange(newValue);
+              setLocalAmplitude(newValue.toString());
+            }}
+          >
+            <Text style={styles.buttonText}>-</Text>
+          </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            value={localAmplitude}
+            onChangeText={handleAmplitudeChange}
+            keyboardType="numeric"
+          />
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              const newValue = Math.min(100, state.amplitude + 5);
+              onAmplitudeChange(newValue);
+              setLocalAmplitude(newValue.toString());
+            }}
+          >
+            <Text style={styles.buttonText}>+</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.controlGroup}>
         <Text style={styles.label}>
           {t('Dalga Boyu', 'Wavelength')}: {state.wavelength.toFixed(0)}
         </Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={50}
-          maximumValue={400}
-          step={10}
-          value={state.wavelength}
-          onValueChange={onWavelengthChange}
-          minimumTrackTintColor="#4263eb"
-          maximumTrackTintColor="#e9ecef"
-          thumbTintColor="#4263eb"
-        />
+        <View style={styles.inputContainer}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              const newValue = Math.max(50, state.wavelength - 10);
+              onWavelengthChange(newValue);
+              setLocalWavelength(newValue.toString());
+            }}
+          >
+            <Text style={styles.buttonText}>-</Text>
+          </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            value={localWavelength}
+            onChangeText={handleWavelengthChange}
+            keyboardType="numeric"
+          />
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              const newValue = Math.min(400, state.wavelength + 10);
+              onWavelengthChange(newValue);
+              setLocalWavelength(newValue.toString());
+            }}
+          >
+            <Text style={styles.buttonText}>+</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.controlGroup}>
         <Text style={styles.label}>
           {t('Dalga Hızı', 'Wave Speed')}: {state.waveSpeed.toFixed(0)}
         </Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={10}
-          maximumValue={100}
-          step={5}
-          value={state.waveSpeed}
-          onValueChange={onSpeedChange}
-          minimumTrackTintColor="#4263eb"
-          maximumTrackTintColor="#e9ecef"
-          thumbTintColor="#4263eb"
-        />
+        <View style={styles.inputContainer}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              const newValue = Math.max(10, state.waveSpeed - 5);
+              onSpeedChange(newValue);
+              setLocalWaveSpeed(newValue.toString());
+            }}
+          >
+            <Text style={styles.buttonText}>-</Text>
+          </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            value={localWaveSpeed}
+            onChangeText={handleWaveSpeedChange}
+            keyboardType="numeric"
+          />
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              const newValue = Math.min(100, state.waveSpeed + 5);
+              onSpeedChange(newValue);
+              setLocalWaveSpeed(newValue.toString());
+            }}
+          >
+            <Text style={styles.buttonText}>+</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.controlGroup}>
         <Text style={styles.label}>
           {t('İşaretli Noktalar', 'Marked Points')}: {state.markedPoints.length}
         </Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={1}
-          maximumValue={5}
-          step={1}
-          value={state.markedPoints.length}
-          onValueChange={onMarkedPointsChange}
-          minimumTrackTintColor="#4263eb"
-          maximumTrackTintColor="#e9ecef"
-          thumbTintColor="#4263eb"
-        />
+        <View style={styles.inputContainer}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              const newValue = Math.max(1, state.markedPoints.length - 1);
+              onMarkedPointsChange(newValue);
+              setLocalMarkedPoints(newValue.toString());
+            }}
+          >
+            <Text style={styles.buttonText}>-</Text>
+          </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            value={localMarkedPoints}
+            onChangeText={handleMarkedPointsChange}
+            keyboardType="numeric"
+          />
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              const newValue = Math.min(5, state.markedPoints.length + 1);
+              onMarkedPointsChange(newValue);
+              setLocalMarkedPoints(newValue.toString());
+            }}
+          >
+            <Text style={styles.buttonText}>+</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.buttonGroup}>
         <TouchableOpacity
           style={[
-            styles.button,
+            styles.directionButton,
             state.direction === 'right'
               ? styles.activeButton
               : styles.inactiveButton,
@@ -111,7 +228,7 @@ export const TransverseWaveControls: React.FC<TransverseWaveControlsProps> = ({
 
         <TouchableOpacity
           style={[
-            styles.button,
+            styles.directionButton,
             state.direction === 'left'
               ? styles.activeButton
               : styles.inactiveButton,
@@ -134,7 +251,7 @@ export const TransverseWaveControls: React.FC<TransverseWaveControlsProps> = ({
       <View style={styles.buttonGroup}>
         <TouchableOpacity
           style={[
-            styles.button,
+            styles.toggleButton,
             state.showVelocity ? styles.activeButton : styles.inactiveButton,
           ]}
           onPress={onVelocityToggle}
@@ -158,7 +275,7 @@ export const TransverseWaveControls: React.FC<TransverseWaveControlsProps> = ({
         <View style={styles.buttonGroup}>
           <TouchableOpacity
             style={[
-              styles.button,
+              styles.toggleButton,
               state.showPeriodGraph
                 ? styles.activeButton
                 : styles.inactiveButton,
@@ -289,16 +406,40 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     color: '#495057',
   },
-  slider: {
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  input: {
+    flex: 1,
     height: 40,
-    width: '100%',
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    borderRadius: 4,
+    paddingHorizontal: 10,
+    textAlign: 'center',
+    marginHorizontal: 5,
+  },
+  button: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#4263eb',
+    borderRadius: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '500',
+    fontSize: 14,
   },
   buttonGroup: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 15,
   },
-  button: {
+  directionButton: {
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 6,
@@ -306,15 +447,18 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     alignItems: 'center',
   },
+  toggleButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    flex: 1,
+    alignItems: 'center',
+  },
   activeButton: {
     backgroundColor: '#4263eb',
   },
   inactiveButton: {
     backgroundColor: '#e9ecef',
-  },
-  buttonText: {
-    fontWeight: '500',
-    fontSize: 14,
   },
   activeButtonText: {
     color: '#fff',

@@ -193,7 +193,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Beginner',
     description: 'Enine dalga hareketi ve özellikleri',
     descriptionEn: 'Transverse wave motion and properties',
-    route: '/experiments/waves/transverse-wave',
+    route: '/experiments/waves/transverse-wave' as any,
   },
   {
     id: '16',

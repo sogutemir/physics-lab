@@ -35,6 +35,11 @@ export default function ExperimentsLayout() {
         name="waves/doppler-effect"
         options={{ headerShown: false }}
       />
+      <Stack.Screen name="waves/double-slit" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="waves/transverse-wave"
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name="basics/coriolis-effect"
         options={{ headerShown: false }}

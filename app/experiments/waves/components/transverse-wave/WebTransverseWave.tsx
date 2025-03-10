@@ -184,6 +184,9 @@ export const WebTransverseWave = forwardRef<any, TransverseWaveProps>(
       const centerY = height / 2;
       const directionFactor = state.direction === 'right' ? -1 : 1;
 
+      // Nokta renkleri - periyot grafiğindeki renklerle aynı
+      const colors = ['#4263eb', '#fa5252', '#40c057', '#fab005', '#7950f2'];
+
       return state.markedPoints.map((point, index) => {
         const y =
           amplitude *
@@ -196,7 +199,7 @@ export const WebTransverseWave = forwardRef<any, TransverseWaveProps>(
             cx={point.x}
             cy={canvasY}
             r={6}
-            fill="#fa5252"
+            fill={colors[index % colors.length]}
           />
         );
       });
@@ -210,6 +213,9 @@ export const WebTransverseWave = forwardRef<any, TransverseWaveProps>(
       const centerY = height / 2;
       const directionFactor = state.direction === 'right' ? -1 : 1;
       const omega = waveParameters.waveSpeed * waveNumber;
+
+      // Nokta renkleri - periyot grafiğindeki renklerle aynı
+      const colors = ['#4263eb', '#fa5252', '#40c057', '#fab005', '#7950f2'];
 
       return state.markedPoints.map((point, index) => {
         const y =
@@ -228,6 +234,9 @@ export const WebTransverseWave = forwardRef<any, TransverseWaveProps>(
         const arrowLength = 10;
         const angle = Math.atan2(-scaledVelocity, 0);
 
+        // Nokta rengiyle aynı renkte vektör
+        const color = colors[index % colors.length];
+
         return (
           <React.Fragment key={`velocity-${index}`}>
             <Line
@@ -235,7 +244,7 @@ export const WebTransverseWave = forwardRef<any, TransverseWaveProps>(
               y1={canvasY}
               x2={point.x}
               y2={canvasY - scaledVelocity}
-              stroke="#4dabf7"
+              stroke={color}
               strokeWidth={2}
             />
             <Path
@@ -253,7 +262,7 @@ export const WebTransverseWave = forwardRef<any, TransverseWaveProps>(
               }
                 Z
               `}
-              fill="#4dabf7"
+              fill={color}
             />
           </React.Fragment>
         );

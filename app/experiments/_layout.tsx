@@ -44,7 +44,14 @@ export default function ExperimentsLayout() {
         name="basics/coriolis-effect"
         options={{ headerShown: false }}
       />
-      <Stack.Screen name="basics/buoyancy" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="basics/buoyancy"
+        options={{
+          headerShown: false,
+          title: 'Kaldırma Kuvveti Deneyi',
+          animation: 'slide_from_right',
+        }}
+      />
     </Stack>
   );
 }

@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+} from 'react-native';
 import { Link } from 'expo-router';
 import { ArrowRight, Search } from 'lucide-react-native';
 import { useLanguage } from '../../components/LanguageContext';
@@ -53,7 +60,7 @@ const experiments: Experiment[] = [
     difficulty: 'Başlangıç',
     difficultyEn: 'Beginner',
     description: 'Harmonik hareket ve Hooke Yasası',
-    descriptionEn: 'Harmonic motion and Hooke\'s Law',
+    descriptionEn: "Harmonic motion and Hooke's Law",
     route: '/experiments/mechanics/spring-mass',
   },
   {
@@ -153,7 +160,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Intermediate',
     description: 'Tork ve denge koşulları',
     descriptionEn: 'Torque and equilibrium conditions',
-    route: '/experiments/mechanics/torque-balance',
+    route: '/experiments/mechanics/moment-balance',
   },
   {
     id: '13',
@@ -277,16 +284,24 @@ const categoryTranslations: Record<Category, string> = {
 
 export default function ExperimentsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | 'all'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>(
+    'all'
+  );
+  const [selectedDifficulty, setSelectedDifficulty] = useState<
+    Difficulty | 'all'
+  >('all');
 
   // Filter experiments based on search, category, and difficulty
   const filteredExperiments = experiments.filter((experiment) => {
-    const matchesSearch = experiment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          experiment.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || experiment.category === selectedCategory;
-    const matchesDifficulty = selectedDifficulty === 'all' || experiment.difficulty === selectedDifficulty;
-    
+    const matchesSearch =
+      experiment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      experiment.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategory === 'all' || experiment.category === selectedCategory;
+    const matchesDifficulty =
+      selectedDifficulty === 'all' ||
+      experiment.difficulty === selectedDifficulty;
+
     return matchesSearch && matchesCategory && matchesDifficulty;
   });
 
@@ -316,31 +331,36 @@ export default function ExperimentsScreen() {
           <TouchableOpacity
             style={[
               styles.filterButton,
-              selectedCategory === 'all' && styles.filterButtonActive
+              selectedCategory === 'all' && styles.filterButtonActive,
             ]}
             onPress={() => setSelectedCategory('all')}
           >
-            <Text style={[
-              styles.filterButtonText,
-              selectedCategory === 'all' && styles.filterButtonTextActive
-            ]}>
+            <Text
+              style={[
+                styles.filterButtonText,
+                selectedCategory === 'all' && styles.filterButtonTextActive,
+              ]}
+            >
               Tümü
             </Text>
           </TouchableOpacity>
-          
+
           {(Object.keys(categoryTranslations) as Category[]).map((category) => (
             <TouchableOpacity
               key={category}
               style={[
                 styles.filterButton,
-                selectedCategory === category && styles.filterButtonActive
+                selectedCategory === category && styles.filterButtonActive,
               ]}
               onPress={() => setSelectedCategory(category)}
             >
-              <Text style={[
-                styles.filterButtonText,
-                selectedCategory === category && styles.filterButtonTextActive
-              ]}>
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  selectedCategory === category &&
+                    styles.filterButtonTextActive,
+                ]}
+              >
                 {categoryTranslations[category]}
               </Text>
             </TouchableOpacity>
@@ -352,37 +372,39 @@ export default function ExperimentsScreen() {
         <TouchableOpacity
           style={[
             styles.difficultyButton,
-            selectedDifficulty === 'all' && styles.difficultyButtonActive
+            selectedDifficulty === 'all' && styles.difficultyButtonActive,
           ]}
           onPress={() => setSelectedDifficulty('all')}
         >
           <Text style={styles.difficultyButtonText}>Tüm Seviyeler</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={[
             styles.difficultyButton,
-            selectedDifficulty === 'Başlangıç' && styles.difficultyButtonActive
+            selectedDifficulty === 'Başlangıç' && styles.difficultyButtonActive,
           ]}
           onPress={() => setSelectedDifficulty('Başlangıç')}
         >
           <Text style={styles.difficultyButtonText}>Başlangıç</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={[
             styles.difficultyButton,
-            selectedDifficulty === 'Orta Seviye' && styles.difficultyButtonActive
+            selectedDifficulty === 'Orta Seviye' &&
+              styles.difficultyButtonActive,
           ]}
           onPress={() => setSelectedDifficulty('Orta Seviye')}
         >
           <Text style={styles.difficultyButtonText}>Orta Seviye</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={[
             styles.difficultyButton,
-            selectedDifficulty === 'İleri Seviye' && styles.difficultyButtonActive
+            selectedDifficulty === 'İleri Seviye' &&
+              styles.difficultyButtonActive,
           ]}
           onPress={() => setSelectedDifficulty('İleri Seviye')}
         >
@@ -404,12 +426,17 @@ export default function ExperimentsScreen() {
                     {experiment.description}
                   </Text>
                   <View style={styles.experimentFooter}>
-                    <Text style={[
-                      styles.experimentDifficulty,
-                      experiment.difficulty === 'Başlangıç' && styles.beginnerDifficulty,
-                      experiment.difficulty === 'Orta Seviye' && styles.intermediateDifficulty,
-                      experiment.difficulty === 'İleri Seviye' && styles.advancedDifficulty,
-                    ]}>
+                    <Text
+                      style={[
+                        styles.experimentDifficulty,
+                        experiment.difficulty === 'Başlangıç' &&
+                          styles.beginnerDifficulty,
+                        experiment.difficulty === 'Orta Seviye' &&
+                          styles.intermediateDifficulty,
+                        experiment.difficulty === 'İleri Seviye' &&
+                          styles.advancedDifficulty,
+                      ]}
+                    >
                       {experiment.difficulty}
                     </Text>
                     <View style={styles.startButton}>

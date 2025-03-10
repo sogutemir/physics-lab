@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, Href } from 'expo-router';
 import { ArrowRight, Search } from 'lucide-react-native';
 import { useLanguage } from '../../components/LanguageContext';
 
@@ -15,6 +15,32 @@ import { useLanguage } from '../../components/LanguageContext';
 type Difficulty = 'Başlangıç' | 'Orta Seviye' | 'İleri Seviye';
 type DifficultyEn = 'Beginner' | 'Intermediate' | 'Advanced';
 type Category = 'mechanics' | 'waves' | 'electricity' | 'basics';
+
+type ExperimentRoute =
+  | '/experiments/mechanics/pendulum'
+  | '/experiments/mechanics/conical-pendulum'
+  | '/experiments/mechanics/spring-mass'
+  | '/experiments/mechanics/inclined-plane'
+  | '/experiments/mechanics/weighted-pulley'
+  | '/experiments/mechanics/collisions'
+  | '/experiments/mechanics/atwood-machine'
+  | '/experiments/mechanics/friction'
+  | '/experiments/mechanics/accelerated-motion'
+  | '/experiments/mechanics/free-fall'
+  | '/experiments/mechanics/vector-addition'
+  | '/experiments/mechanics/moment-balance'
+  | '/experiments/waves/double-slit'
+  | '/experiments/waves/wave-interference'
+  | '/experiments/waves/transverse-wave'
+  | '/experiments/waves/optical-systems'
+  | '/experiments/waves/doppler-effect'
+  | '/experiments/electricity/electric-field'
+  | '/experiments/electricity/rlc-circuit'
+  | '/experiments/electricity/transformer'
+  | '/experiments/basics/relative-motion'
+  | '/experiments/basics/coriolis-effect'
+  | '/experiments/basics/buoyancy'
+  | '/experiments/basics/pressure';
 
 interface Experiment {
   id: string;
@@ -25,7 +51,7 @@ interface Experiment {
   difficultyEn: DifficultyEn;
   description: string;
   descriptionEn: string;
-  route: string;
+  route: Href;
 }
 
 // Sample experiments data
@@ -39,7 +65,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Beginner',
     description: 'Basit sarkaç hareketi ve periyot hesaplamaları',
     descriptionEn: 'Simple pendulum motion and period calculations',
-    route: '/experiments/mechanics/pendulum',
+    route: '/experiments/mechanics/pendulum' as any,
   },
   {
     id: '2',
@@ -50,7 +76,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Intermediate',
     description: 'Konik sarkaç hareketi ve açısal momentum',
     descriptionEn: 'Conical pendulum motion and angular momentum',
-    route: '/experiments/mechanics/conical-pendulum',
+    route: '/experiments/mechanics/conical-pendulum' as any,
   },
   {
     id: '3',
@@ -61,7 +87,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Beginner',
     description: 'Harmonik hareket ve Hooke Yasası',
     descriptionEn: "Harmonic motion and Hooke's Law",
-    route: '/experiments/mechanics/spring-mass',
+    route: '/experiments/mechanics/spring-mass' as any,
   },
   {
     id: '4',
@@ -94,7 +120,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Intermediate',
     description: 'Elastik ve inelastik çarpışmalar',
     descriptionEn: 'Elastic and inelastic collisions',
-    route: '/experiments/mechanics/collisions',
+    route: '/experiments/mechanics/collisions' as any,
   },
   {
     id: '7',
@@ -105,7 +131,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Intermediate',
     description: 'Atwood makinesi ve ivmeli hareket',
     descriptionEn: 'Atwood machine and accelerated motion',
-    route: '/experiments/mechanics/atwood-machine',
+    route: '/experiments/mechanics/atwood-machine' as any,
   },
   {
     id: '8',
@@ -116,7 +142,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Beginner',
     description: 'Sürtünme kuvveti ve hareket analizi',
     descriptionEn: 'Friction force and motion analysis',
-    route: '/experiments/mechanics/friction',
+    route: '/experiments/mechanics/friction' as any,
   },
   {
     id: '9',
@@ -127,7 +153,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Beginner',
     description: 'İvmeli hareket ve kinematik denklemler',
     descriptionEn: 'Accelerated motion and kinematic equations',
-    route: '/experiments/mechanics/accelerated-motion',
+    route: '/experiments/mechanics/accelerated-motion' as any,
   },
   {
     id: '10',
@@ -138,7 +164,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Beginner',
     description: 'Yerçekimi etkisinde serbest düşme hareketi',
     descriptionEn: 'Free fall motion under gravity',
-    route: '/experiments/mechanics/free-fall',
+    route: '/experiments/mechanics/free-fall' as any,
   },
   {
     id: '11',
@@ -160,7 +186,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Intermediate',
     description: 'Tork ve denge koşulları',
     descriptionEn: 'Torque and equilibrium conditions',
-    route: '/experiments/mechanics/moment-balance',
+    route: '/experiments/mechanics/moment-balance' as any,
   },
   {
     id: '13',
@@ -171,7 +197,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Intermediate',
     description: 'Işığın dalga doğası ve girişim',
     descriptionEn: 'Wave nature of light and interference',
-    route: '/experiments/waves/double-slit',
+    route: '/experiments/waves/double-slit' as any,
   },
   {
     id: '14',
@@ -182,7 +208,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Intermediate',
     description: 'Dalgaların girişimi ve süperpozisyon',
     descriptionEn: 'Wave interference and superposition',
-    route: '/experiments/waves/wave-interference',
+    route: '/experiments/waves/wave-interference' as any,
   },
   {
     id: '15',
@@ -204,7 +230,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Advanced',
     description: 'Mercekler ve optik sistemler',
     descriptionEn: 'Lenses and optical systems',
-    route: '/experiments/waves/optical-systems',
+    route: '/experiments/waves/optical-systems' as any,
   },
   {
     id: '17',
@@ -215,7 +241,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Intermediate',
     description: 'Doppler etkisi ve frekans değişimi',
     descriptionEn: 'Doppler effect and frequency shift',
-    route: '/experiments/waves/doppler-effect',
+    route: '/experiments/waves/doppler-effect' as any,
   },
   {
     id: '18',
@@ -226,7 +252,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Intermediate',
     description: 'Elektrik alan ve potansiyel',
     descriptionEn: 'Electric field and potential',
-    route: '/experiments/electricity/electric-field',
+    route: '/experiments/electricity/electric-field' as any,
   },
   {
     id: '19',
@@ -237,7 +263,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Advanced',
     description: 'RLC devresi ve rezonans',
     descriptionEn: 'RLC circuit and resonance',
-    route: '/experiments/electricity/rlc-circuit',
+    route: '/experiments/electricity/rlc-circuit' as any,
   },
   {
     id: '20',
@@ -248,7 +274,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Intermediate',
     description: 'Transformatör çalışma prensibi',
     descriptionEn: 'Transformer working principle',
-    route: '/experiments/electricity/transformer',
+    route: '/experiments/electricity/transformer' as any,
   },
   {
     id: '21',
@@ -259,7 +285,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Intermediate',
     description: 'Göreceli hareket ve referans sistemleri',
     descriptionEn: 'Relative motion and reference frames',
-    route: '/experiments/basics/relative-motion',
+    route: '/experiments/basics/relative-motion' as any,
   },
   {
     id: '22',
@@ -270,7 +296,7 @@ const experiments: Experiment[] = [
     difficultyEn: 'Advanced',
     description: 'Coriolis etkisi ve dönme referans çerçeveleri',
     descriptionEn: 'Coriolis effect and rotating reference frames',
-    route: '/experiments/basics/coriolis-effect',
+    route: '/experiments/basics/coriolis-effect' as any,
   },
   {
     id: '23',
@@ -281,7 +307,18 @@ const experiments: Experiment[] = [
     difficultyEn: 'Intermediate',
     description: 'Kaldırma kuvveti ve yoğunluk etkisi',
     descriptionEn: 'Buoyancy and density effect',
-    route: '/experiments/basics/buoyancy',
+    route: '/experiments/basics/buoyancy' as any,
+  },
+  {
+    id: '24',
+    title: 'Sıvı Basıncı',
+    titleEn: 'Fluid Pressure',
+    category: 'basics',
+    difficulty: 'Başlangıç',
+    difficultyEn: 'Beginner',
+    description: 'Sıvı basıncının derinlik ve yoğunluğa bağlı değişimi',
+    descriptionEn: 'Changes in fluid pressure with depth and density',
+    route: '/experiments/basics/pressure' as any,
   },
 ];
 
@@ -426,7 +463,7 @@ export default function ExperimentsScreen() {
       <View style={styles.experimentsContainer}>
         {filteredExperiments.length > 0 ? (
           filteredExperiments.map((experiment) => (
-            <Link key={experiment.id} href={experiment.route} asChild>
+            <Link key={experiment.id} href={experiment.route as any} asChild>
               <TouchableOpacity style={styles.experimentCard}>
                 <View style={styles.experimentInfo}>
                   <Text style={styles.experimentTitle}>{experiment.title}</Text>

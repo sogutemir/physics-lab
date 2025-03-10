@@ -52,6 +52,14 @@ export default function ExperimentsLayout() {
           animation: 'slide_from_right',
         }}
       />
+      <Stack.Screen
+        name="basics/pressure"
+        options={{
+          headerShown: false,
+          title: 'Sıvı Basıncı Deneyi',
+          animation: 'slide_from_right',
+        }}
+      />
     </Stack>
   );
 }

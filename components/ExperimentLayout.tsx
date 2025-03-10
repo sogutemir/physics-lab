@@ -1,7 +1,20 @@
 import React, { ReactNode } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Play, Pause, RotateCcw, Info, Languages } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  Play,
+  Pause,
+  RotateCcw,
+  Info,
+  Languages,
+} from 'lucide-react-native';
 import { useLanguage } from './LanguageContext';
 
 interface ExperimentLayoutProps {
@@ -12,9 +25,10 @@ interface ExperimentLayoutProps {
   description: string;
   descriptionEn: string;
   children: ReactNode;
-  isRunning: boolean;
-  onToggleSimulation: () => void;
-  onReset: () => void;
+  isRunning?: boolean;
+  onToggleSimulation?: () => void;
+  onReset?: () => void;
+  hideControls?: boolean;
 }
 
 export default function ExperimentLayout({
@@ -28,6 +42,7 @@ export default function ExperimentLayout({
   isRunning,
   onToggleSimulation,
   onReset,
+  hideControls = false,
 }: ExperimentLayoutProps) {
   const router = useRouter();
   const { language, setLanguage, t } = useLanguage();
@@ -40,7 +55,7 @@ export default function ExperimentLayout({
   const currentTitle = language === 'tr' ? title : titleEn;
   const currentDifficulty = language === 'tr' ? difficulty : difficultyEn;
   const currentDescription = language === 'tr' ? description : descriptionEn;
-  
+
   const buttonTexts = {
     start: t('Başlat', 'Start'),
     stop: t('Durdur', 'Stop'),
@@ -52,61 +67,69 @@ export default function ExperimentLayout({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
           <ArrowLeft size={24} color="#2c3e50" />
         </TouchableOpacity>
         <View style={styles.titleContainer}>
           <Text style={styles.title}>{currentTitle}</Text>
-          <Text style={[
-            styles.difficulty,
-            currentDifficulty === 'Başlangıç' || currentDifficulty === 'Beginner' ? styles.beginnerDifficulty : 
-            currentDifficulty === 'Orta Seviye' || currentDifficulty === 'Intermediate' ? styles.intermediateDifficulty : 
-            styles.advancedDifficulty,
-          ]}>
+          <Text
+            style={[
+              styles.difficulty,
+              currentDifficulty === 'Başlangıç' ||
+              currentDifficulty === 'Beginner'
+                ? styles.beginnerDifficulty
+                : currentDifficulty === 'Orta Seviye' ||
+                  currentDifficulty === 'Intermediate'
+                ? styles.intermediateDifficulty
+                : styles.advancedDifficulty,
+            ]}
+          >
             {currentDifficulty}
           </Text>
         </View>
-        <TouchableOpacity onPress={toggleLanguage} style={styles.languageButton}>
-          <Languages size={24} color="#3498db" />
-          <Text style={styles.languageText}>{language === 'tr' ? 'EN' : 'TR'}</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.experimentContainer}>
-        {children}
-      </View>
-
-      <View style={styles.controlsContainer}>
-        <TouchableOpacity 
-          style={styles.controlButton} 
-          onPress={onToggleSimulation}
+        <TouchableOpacity
+          onPress={toggleLanguage}
+          style={styles.languageButton}
         >
-          {isRunning ? (
-            <Pause size={24} color="#3498db" />
-          ) : (
-            <Play size={24} color="#3498db" />
-          )}
-          <Text style={styles.controlText}>
-            {isRunning ? buttonTexts.stop : buttonTexts.start}
+          <Languages size={24} color="#3498db" />
+          <Text style={styles.languageText}>
+            {language === 'tr' ? 'EN' : 'TR'}
           </Text>
         </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.controlButton} 
-          onPress={onReset}
-        >
-          <RotateCcw size={24} color="#3498db" />
-          <Text style={styles.controlText}>{buttonTexts.reset}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.controlButton}
-          onPress={() => {}}
-        >
-          <Info size={24} color="#3498db" />
-          <Text style={styles.controlText}>{buttonTexts.info}</Text>
-        </TouchableOpacity>
       </View>
+
+      <View style={styles.experimentContainer}>{children}</View>
+
+      {!hideControls && (
+        <View style={styles.controlsContainer}>
+          <TouchableOpacity
+            style={styles.controlButton}
+            onPress={onToggleSimulation}
+          >
+            {isRunning ? (
+              <Pause size={24} color="#3498db" />
+            ) : (
+              <Play size={24} color="#3498db" />
+            )}
+            <Text style={styles.controlText}>
+              {isRunning ? buttonTexts.stop : buttonTexts.start}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.controlButton} onPress={onReset}>
+            <RotateCcw size={24} color="#3498db" />
+            <Text style={styles.controlText}>{buttonTexts.reset}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.controlButton} onPress={() => {}}>
+            <Info size={24} color="#3498db" />
+            <Text style={styles.controlText}>{buttonTexts.info}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <ScrollView style={styles.descriptionContainer}>
         <Text style={styles.descriptionTitle}>{buttonTexts.about}</Text>

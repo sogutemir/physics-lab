@@ -60,6 +60,14 @@ export default function ExperimentsLayout() {
           animation: 'slide_from_right',
         }}
       />
+      <Stack.Screen
+        name="electric/ohm-law"
+        options={{
+          headerShown: false,
+          title: 'Ohm Yasası Deneyi',
+          animation: 'slide_from_right',
+        }}
+      />
     </Stack>
   );
 }

@@ -37,6 +37,7 @@ type ExperimentRoute =
   | '/experiments/electricity/electric-field'
   | '/experiments/electricity/rlc-circuit'
   | '/experiments/electricity/transformer'
+  | '/experiments/electric/ohm-law'
   | '/experiments/basics/relative-motion'
   | '/experiments/basics/coriolis-effect'
   | '/experiments/basics/buoyancy'
@@ -319,6 +320,19 @@ const experiments: Experiment[] = [
     description: 'Sıvı basıncının derinlik ve yoğunluğa bağlı değişimi',
     descriptionEn: 'Changes in fluid pressure with depth and density',
     route: '/experiments/basics/pressure' as any,
+  },
+  {
+    id: '25',
+    title: 'Ohm Yasası',
+    titleEn: "Ohm's Law",
+    category: 'electricity',
+    difficulty: 'Başlangıç',
+    difficultyEn: 'Beginner',
+    description:
+      'Elektrik devrelerinde akım, gerilim ve direnç arasındaki ilişkiyi keşfedin.',
+    descriptionEn:
+      'Explore the relationship between current, voltage, and resistance in electrical circuits.',
+    route: '/experiments/electric/ohm-law' as any,
   },
 ];
 

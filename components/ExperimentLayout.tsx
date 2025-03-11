@@ -29,6 +29,7 @@ interface ExperimentLayoutProps {
   onToggleSimulation?: () => void;
   onReset?: () => void;
   hideControls?: boolean;
+  hideDescription?: boolean;
 }
 
 export default function ExperimentLayout({
@@ -43,6 +44,7 @@ export default function ExperimentLayout({
   onToggleSimulation,
   onReset,
   hideControls = false,
+  hideDescription = false,
 }: ExperimentLayoutProps) {
   const router = useRouter();
   const { language, setLanguage, t } = useLanguage();
@@ -131,10 +133,12 @@ export default function ExperimentLayout({
         </View>
       )}
 
-      <ScrollView style={styles.descriptionContainer}>
-        <Text style={styles.descriptionTitle}>{buttonTexts.about}</Text>
-        <Text style={styles.descriptionText}>{currentDescription}</Text>
-      </ScrollView>
+      {!hideDescription && (
+        <ScrollView style={styles.descriptionContainer}>
+          <Text style={styles.descriptionTitle}>{buttonTexts.about}</Text>
+          <Text style={styles.descriptionText}>{currentDescription}</Text>
+        </ScrollView>
+      )}
     </View>
   );
 }

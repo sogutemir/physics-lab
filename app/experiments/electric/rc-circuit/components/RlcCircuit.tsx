@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  useWindowDimensions,
+  ScrollView,
+} from 'react-native';
 import { RlcState, CircuitValues } from '../utils/types';
 import {
   calculateCircuitValues,
   calculateResonanceFrequency,
 } from '../utils/rlcCalculations';
 import { useLanguage } from '../../../../../components/LanguageContext';
-import { ScrollView } from 'react-native-gesture-handler';
 import { Button } from '../../../../../components/ui/button';
 import RlcControls from './RlcControls';
 import RlcCircuitDiagram from './RlcCircuitDiagram';

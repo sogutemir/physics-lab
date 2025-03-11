@@ -38,6 +38,7 @@ type ExperimentRoute =
   | '/experiments/electricity/rlc-circuit'
   | '/experiments/electricity/transformer'
   | '/experiments/electric/ohm-law'
+  | '/experiments/electric/rc-circuit'
   | '/experiments/basics/relative-motion'
   | '/experiments/basics/coriolis-effect'
   | '/experiments/basics/buoyancy'
@@ -333,6 +334,19 @@ const experiments: Experiment[] = [
     descriptionEn:
       'Explore the relationship between current, voltage, and resistance in electrical circuits.',
     route: '/experiments/electric/ohm-law' as any,
+  },
+  {
+    id: '26',
+    title: 'RLC Devre Laboratuvarı',
+    titleEn: 'RLC Circuit Laboratory',
+    category: 'electricity',
+    difficulty: 'Orta Seviye',
+    difficultyEn: 'Intermediate',
+    description:
+      'Bu deneyde direnç, indüktans ve kapasitans arasındaki ilişkiyi keşfedin. Farklı parametreleri değiştirerek devrenin davranışını gözlemleyin ve rezonans frekansını bulun.',
+    descriptionEn:
+      'In this experiment, explore the relationship between resistance, inductance, and capacitance. Observe the behavior of the circuit by changing different parameters and find the resonance frequency.',
+    route: '/experiments/electric/rc-circuit' as any,
   },
 ];
 

@@ -11,6 +11,14 @@ export default function ElectricExperimentsLayout() {
           animation: 'slide_from_right',
         }}
       />
+      <Stack.Screen
+        name="rc-circuit"
+        options={{
+          headerShown: false,
+          title: 'RLC Devre Deneyi',
+          animation: 'slide_from_right',
+        }}
+      />
     </Stack>
   );
 }

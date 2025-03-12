@@ -68,6 +68,22 @@ export default function ExperimentsLayout() {
           animation: 'slide_from_right',
         }}
       />
+      <Stack.Screen
+        name="electric/circuit-builder"
+        options={{
+          headerShown: false,
+          title: 'Devre Oluşturucu Deneyi',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="electric/electric-field"
+        options={{
+          headerShown: false,
+          title: 'Elektrik Alanı Deneyi',
+          animation: 'slide_from_right',
+        }}
+      />
     </Stack>
   );
 }

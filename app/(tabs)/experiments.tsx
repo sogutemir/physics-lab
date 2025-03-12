@@ -258,14 +258,16 @@ const experiments: Experiment[] = [
   },
   {
     id: '19',
-    title: 'Elektrik Alan',
+    title: 'Elektrik Alanı',
     titleEn: 'Electric Field',
     category: 'electricity',
     difficulty: 'Orta Seviye',
     difficultyEn: 'Intermediate',
-    description: 'Elektrik alan ve potansiyel',
-    descriptionEn: 'Electric field and potential',
-    route: '/experiments/electricity/electric-field' as any,
+    description:
+      'Elektrik yüklerinin oluşturduğu alan ve yükler arasındaki etkileşimleri gözlemleyin. Coulomb Yasası ve elektrik alan kavramlarını keşfedin.',
+    descriptionEn:
+      "Observe the field created by electric charges and the interactions between them. Explore Coulomb's Law and the concept of electric fields.",
+    route: '/experiments/electric/electric-field' as any,
   },
   {
     id: '20',

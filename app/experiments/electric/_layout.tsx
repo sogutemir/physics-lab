@@ -1,22 +1,46 @@
 import { Stack } from 'expo-router';
+import { useLanguage } from '../../../components/LanguageContext';
 
-export default function ElectricExperimentsLayout() {
+export default function ElectricLayout() {
+  const { t } = useLanguage();
+
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: '#3498db',
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      }}
+    >
       <Stack.Screen
-        name="ohm-law"
+        name="index"
         options={{
-          headerShown: false,
-          title: 'Ohm Yasası Deneyi',
-          animation: 'slide_from_right',
+          title: t('Elektrik Deneyleri', 'Electric Experiments'),
         }}
       />
       <Stack.Screen
-        name="rc-circuit"
+        name="ohm-law"
         options={{
+          title: t('Ohm Yasası', "Ohm's Law"),
           headerShown: false,
-          title: 'RLC Devre Deneyi',
-          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="circuit-builder"
+        options={{
+          title: t('Devre Oluşturucu', 'Circuit Builder'),
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="electric-field"
+        options={{
+          title: t('Elektrik Alanı', 'Electric Field'),
+          headerShown: false,
         }}
       />
     </Stack>

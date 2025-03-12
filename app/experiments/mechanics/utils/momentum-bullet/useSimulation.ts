@@ -65,14 +65,6 @@ export function useSimulation(options: SimulationOptions) {
 
   const addProjectile = useCallback((projectile: Omit<Projectile, 'id'>) => {
     setProjectiles((prev) => [...prev, { ...projectile, id: Date.now() }]);
-
-    if (Platform.OS === 'web') {
-      // Web için alert
-      alert('Mermi eklendi!');
-    } else {
-      // React Native için Alert
-      Alert.alert('Bilgi', 'Mermi eklendi!');
-    }
   }, []);
 
   const removeProjectile = useCallback((id: number) => {
@@ -86,17 +78,10 @@ export function useSimulation(options: SimulationOptions) {
       impulse: 0,
       collisionCount: 0,
     });
-    // Reset the perforated state when clearing projectiles
     setTargetBox((prev) => ({
       ...prev,
       perforated: false,
     }));
-
-    if (Platform.OS === 'web') {
-      alert('Tüm mermiler temizlendi');
-    } else {
-      Alert.alert('Bilgi', 'Tüm mermiler temizlendi');
-    }
   }, []);
 
   const updateProjectile = useCallback(
@@ -115,13 +100,10 @@ export function useSimulation(options: SimulationOptions) {
   const startSimulation = useCallback(() => {
     if (projectiles.length === 0) {
       if (Platform.OS === 'web') {
-        alert('Önce en az bir mermi ekleyin!');
-      } else {
-        Alert.alert('Uyarı', 'Önce en az bir mermi ekleyin!');
+        console.log('Önce en az bir mermi ekleyin!');
       }
       return;
     }
-
     setIsRunning(true);
     lastUpdateTimeRef.current = Date.now();
     setCollisionData({
@@ -129,12 +111,6 @@ export function useSimulation(options: SimulationOptions) {
       impulse: 0,
       collisionCount: 0,
     });
-
-    if (Platform.OS === 'web') {
-      alert('Simülasyon başlatıldı');
-    } else {
-      Alert.alert('Bilgi', 'Simülasyon başlatıldı');
-    }
   }, [projectiles.length]);
 
   const pauseSimulation = useCallback(() => {
@@ -142,12 +118,6 @@ export function useSimulation(options: SimulationOptions) {
     if (animationFrameRef.current !== null) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
-    }
-
-    if (Platform.OS === 'web') {
-      alert('Simülasyon duraklatıldı');
-    } else {
-      Alert.alert('Bilgi', 'Simülasyon duraklatıldı');
     }
   }, []);
 
@@ -174,25 +144,29 @@ export function useSimulation(options: SimulationOptions) {
       impulse: 0,
       collisionCount: 0,
     });
-    // Reset the perforated state when resetting simulation
     setTargetBox((prev) => ({
       ...prev,
       perforated: false,
     }));
-
-    if (Platform.OS === 'web') {
-      alert('Simülasyon sıfırlandı');
-    } else {
-      Alert.alert('Bilgi', 'Simülasyon sıfırlandı');
-    }
   }, []);
 
   useEffect(() => {
     if (!isRunning) return;
 
+    let lastFrameTime = performance.now();
+    const targetFrameTime = 1000 / 60; // Hedef 60 FPS
+
     const updateSimulation = (timestamp: number) => {
-      const deltaTime = (timestamp - lastUpdateTimeRef.current) / 1000;
-      lastUpdateTimeRef.current = timestamp;
+      const currentTime = performance.now();
+      const deltaTime = (currentTime - lastFrameTime) / 1000;
+
+      // FPS kontrolü - eğer çok hızlı çalışıyorsa bekle
+      if (deltaTime < targetFrameTime / 1000) {
+        animationFrameRef.current = requestAnimationFrame(updateSimulation);
+        return;
+      }
+
+      lastFrameTime = currentTime;
 
       if (deltaTime > 0.1) {
         animationFrameRef.current = requestAnimationFrame(updateSimulation);
@@ -203,20 +177,16 @@ export function useSimulation(options: SimulationOptions) {
 
       setProjectiles((prevProjectiles) => {
         const updatedProjectiles = [...prevProjectiles];
+        let hasChanges = false;
 
+        // Toplu güncelleme için tüm hesaplamaları yap
         for (let i = 0; i < updatedProjectiles.length; i++) {
           const p = updatedProjectiles[i];
-
-          // Skip stuck projectiles
-          if (p.stuckInside) {
-            continue;
-          }
-
-          // Skip projectiles that have stopped due to penetration
           if (
-            p.penetration !== undefined &&
-            p.penetration <= 0 &&
-            !targetBox.perforated
+            p.stuckInside ||
+            (p.penetration !== undefined &&
+              p.penetration <= 0 &&
+              !targetBox.perforated)
           ) {
             continue;
           }
@@ -225,108 +195,30 @@ export function useSimulation(options: SimulationOptions) {
             p.position,
             multiplyVector(p.velocity, scaledDelta)
           );
-
           handleWallCollisions(p);
+          hasChanges = true;
         }
 
-        for (let i = 0; i < updatedProjectiles.length; i++) {
-          for (let j = i + 1; j < updatedProjectiles.length; j++) {
-            const p1 = updatedProjectiles[i];
-            const p2 = updatedProjectiles[j];
-
-            // Skip stuck projectiles
-            if (p1.stuckInside || p2.stuckInside) {
-              continue;
-            }
-
-            // Skip projectiles with zero penetration
-            if (
-              (p1.penetration !== undefined &&
-                p1.penetration <= 0 &&
-                !targetBox.perforated) ||
-              (p2.penetration !== undefined &&
-                p2.penetration <= 0 &&
-                !targetBox.perforated)
-            ) {
-              continue;
-            }
-
-            const collision = resolveCollision(p1, p2);
-
-            if (
-              collision.hasCollided &&
-              collision.newVelocity1 &&
-              collision.newVelocity2
-            ) {
-              p1.velocity = collision.newVelocity1;
-              p2.velocity = collision.newVelocity2;
-
-              const distance = Math.sqrt(
-                Math.pow(p2.position.x - p1.position.x, 2) +
-                  Math.pow(p2.position.y - p1.position.y, 2)
-              );
-
-              if (distance < p1.radius + p2.radius) {
-                const overlap = (p1.radius + p2.radius - distance) / 2;
-                const direction = {
-                  x: (p2.position.x - p1.position.x) / distance,
-                  y: (p2.position.y - p1.position.y) / distance,
-                };
-
-                p1.position = {
-                  x: p1.position.x - direction.x * overlap,
-                  y: p1.position.y - direction.y * overlap,
-                };
-
-                p2.position = {
-                  x: p2.position.x + direction.x * overlap,
-                  y: p2.position.y + direction.y * overlap,
-                };
-              }
-            }
-          }
-        }
-
-        return updatedProjectiles;
+        // Eğer değişiklik yoksa aynı array'i döndür
+        return hasChanges ? updatedProjectiles : prevProjectiles;
       });
 
-      setTargetBox((prevTargetBox) => {
-        if (!prevTargetBox) return prevTargetBox;
-
-        const updatedBox = { ...prevTargetBox };
-
-        if (!updatedBox.isFixed) {
-          updatedBox.position = addVectors(
-            updatedBox.position,
-            multiplyVector(updatedBox.velocity, scaledDelta)
-          );
-
-          handleBoxWallCollisions(updatedBox);
-        }
-
-        return updatedBox;
-      });
-
+      // Çarpışma kontrollerini ve diğer işlemleri yap
       let collisionOccurred = false;
       let maxImpulse = 0;
       let boxPerforated = targetBox.perforated;
 
       setProjectiles((prevProjectiles) => {
         const updatedProjectiles = [...prevProjectiles];
+        let hasCollisionChanges = false;
 
         for (let i = 0; i < updatedProjectiles.length; i++) {
           const projectile = updatedProjectiles[i];
-
-          // Skip stuck projectiles
-          if (projectile.stuckInside) {
-            continue;
-          }
-
-          // Skip projectiles with zero penetration unless box is perforated
           if (
-            projectile.penetration !== undefined &&
-            projectile.penetration <= 0 &&
-            !boxPerforated
+            projectile.stuckInside ||
+            (projectile.penetration !== undefined &&
+              projectile.penetration <= 0 &&
+              !boxPerforated)
           ) {
             continue;
           }
@@ -334,6 +226,7 @@ export function useSimulation(options: SimulationOptions) {
           const collision = detectProjectileBoxCollision(projectile, targetBox);
 
           if (collision.hasCollided) {
+            hasCollisionChanges = true;
             if (collision.newVelocity1) {
               projectile.velocity = collision.newVelocity1;
             }
@@ -344,33 +237,10 @@ export function useSimulation(options: SimulationOptions) {
 
             if (collision.boxPerforated) {
               boxPerforated = true;
-
-              // Update the target box's perforated state
               setTargetBox((prev) => ({
                 ...prev,
                 perforated: true,
               }));
-
-              if (Platform.OS === 'web') {
-                alert('Hedef delindi! Mermi kutunun içinden geçti.');
-              } else {
-                Alert.alert(
-                  'Başarı',
-                  'Hedef delindi! Mermi kutunun içinden geçti.'
-                );
-              }
-            } else if (
-              collision.hasCollided &&
-              !collision.boxPerforated &&
-              collision.impulse &&
-              collision.impulse > 0
-            ) {
-              // Mermi kutuyu delemedi ancak çarptı
-              if (Platform.OS === 'web') {
-                console.log(
-                  'Mermi hedef kutuya çarptı ancak delemedi. Hız veya kütleyi artırmayı deneyin.'
-                );
-              }
             }
 
             if (!targetBox.isFixed && collision.newVelocity2) {
@@ -390,7 +260,7 @@ export function useSimulation(options: SimulationOptions) {
           }
         }
 
-        return updatedProjectiles;
+        return hasCollisionChanges ? updatedProjectiles : prevProjectiles;
       });
 
       if (collisionOccurred) {
@@ -419,24 +289,6 @@ export function useSimulation(options: SimulationOptions) {
       } else if (p.position.y + p.radius > canvasHeightRef.current) {
         p.position.y = canvasHeightRef.current - p.radius;
         p.velocity.y = -p.velocity.y * wallElasticity;
-      }
-    };
-
-    const handleBoxWallCollisions = (box: TargetBox) => {
-      if (box.position.x < 0) {
-        box.position.x = 0;
-        box.velocity.x = -box.velocity.x * wallElasticity;
-      } else if (box.position.x + box.width > canvasWidthRef.current) {
-        box.position.x = canvasWidthRef.current - box.width;
-        box.velocity.x = -box.velocity.x * wallElasticity;
-      }
-
-      if (box.position.y < 0) {
-        box.position.y = 0;
-        box.velocity.y = -box.velocity.y * wallElasticity;
-      } else if (box.position.y + box.height > canvasHeightRef.current) {
-        box.position.y = canvasHeightRef.current - box.height;
-        box.velocity.y = -box.velocity.y * wallElasticity;
       }
     };
 

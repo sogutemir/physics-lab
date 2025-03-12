@@ -38,6 +38,78 @@ const SimulationCanvas = ({
   const { t } = useLanguage();
   const [canvasSize, setCanvasSize] = useState({ width, height });
 
+  // Fiziksel değerleri hesaplama
+  const calculatePhysicalValues = () => {
+    if (!projectiles.length) return null;
+
+    // En son eklenen mermiyi al
+    const lastProjectile = projectiles[projectiles.length - 1];
+
+    // Hız büyüklüğü
+    const velocity = Math.sqrt(
+      lastProjectile.velocity.x ** 2 + lastProjectile.velocity.y ** 2
+    );
+
+    // Kütle
+    const mass = lastProjectile.mass;
+
+    // Momentum (p = mv)
+    const momentum = mass * velocity;
+
+    // Kinetik enerji (KE = 1/2 * m * v^2)
+    const kineticEnergy = 0.5 * mass * velocity ** 2;
+
+    // Etki eden kuvvet (F = ma veya F = Δp/Δt)
+    // Çarpışma durumunda impuls değerini kullan
+    const force = collisionData?.hasCollided
+      ? collisionData.impulse * 100 // impuls değerini kuvvete çevir
+      : mass * velocity * 10; // Yaklaşık bir değer
+
+    return {
+      velocity: velocity.toFixed(2),
+      momentum: momentum.toFixed(2),
+      kineticEnergy: kineticEnergy.toFixed(2),
+      force: force.toFixed(2),
+    };
+  };
+
+  // Fiziksel değerleri gösteren panel
+  const renderPhysicsPanel = () => {
+    const values = calculatePhysicalValues();
+    if (!values) return null;
+
+    return (
+      <G x="20" y="20">
+        <Rect
+          x="0"
+          y="0"
+          width="200"
+          height="120"
+          fill="rgba(255, 255, 255, 0.9)"
+          stroke="#3b82f6"
+          strokeWidth="1"
+          rx="5"
+          ry="5"
+        />
+        <SvgText x="10" y="25" fill="#1e40af" fontSize="12" fontWeight="bold">
+          {t('Fiziksel Değerler:', 'Physical Values:')}
+        </SvgText>
+        <SvgText x="10" y="45" fill="#374151" fontSize="11">
+          {t('Etki Eden Kuvvet:', 'Applied Force:')} {values.force} N
+        </SvgText>
+        <SvgText x="10" y="65" fill="#374151" fontSize="11">
+          {t('Momentum:', 'Momentum:')} {values.momentum} kg⋅m/s
+        </SvgText>
+        <SvgText x="10" y="85" fill="#374151" fontSize="11">
+          {t('Kinetik Enerji:', 'Kinetic Energy:')} {values.kineticEnergy} J
+        </SvgText>
+        <SvgText x="10" y="105" fill="#374151" fontSize="11">
+          {t('Hız:', 'Velocity:')} {values.velocity} m/s
+        </SvgText>
+      </G>
+    );
+  };
+
   // Yeniden boyutlandırma işlemi için
   useEffect(() => {
     setCanvasSize({ width, height });
@@ -694,41 +766,6 @@ const SimulationCanvas = ({
     return vectors;
   };
 
-  // Çarpışma verilerini çizme
-  const renderCollisionData = () => {
-    if (!collisionData || !collisionData.hasCollided) return null;
-
-    return (
-      <G key="collision-data">
-        <SvgText
-          x={10}
-          y={30}
-          fill="rgba(0, 0, 0, 0.7)"
-          fontSize={14}
-          textAnchor="start"
-        >
-          {`${t('Çarpışma Sayısı', 'Collision Count')}: ${
-            collisionData.collisionCount
-          }`}
-        </SvgText>
-
-        {collisionData.impulse > 0 && (
-          <SvgText
-            x={10}
-            y={50}
-            fill="rgba(0, 0, 0, 0.7)"
-            fontSize={14}
-            textAnchor="start"
-          >
-            {`${t('Son Darbe', 'Last Impact')}: ${collisionData.impulse.toFixed(
-              2
-            )} N·s`}
-          </SvgText>
-        )}
-      </G>
-    );
-  };
-
   return (
     <View
       style={[
@@ -767,8 +804,8 @@ const SimulationCanvas = ({
         {/* Hız vektörleri */}
         {renderVelocityVectors()}
 
-        {/* Çarpışma verileri */}
-        {renderCollisionData()}
+        {/* Fiziksel değerleri gösteren panel */}
+        {renderPhysicsPanel()}
       </Svg>
 
       {/* Boş durum mesajı */}

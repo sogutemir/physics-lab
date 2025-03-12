@@ -197,16 +197,39 @@ export const detectProjectileBoxCollision = (
 
       if (box.isFixed) {
         const thickness = box.thickness || 5;
-        // Perforasyon eşiğini düşürerek delmeyi kolaylaştırıyoruz
-        const perforationThreshold = boxHardness * thickness * 0.2; // Eşik faktörünü düşürdük (0.5 -> 0.2)
-        // Mermi gücünü hız ve kütlenin karesiyle ilişkilendirerek daha etkili hale getiriyoruz
+        const perforationThreshold = boxHardness * thickness * 0.2;
         const projectileForce = (speed * speed * projectileMass) / 10;
 
         boxPerforated = projectileForce > perforationThreshold;
 
         if (boxPerforated) {
-          // Mark box as perforated
+          // Mark box as perforated and make it movable
           (box as any).perforated = true;
+          // Kutu delindiyse artık sabit olmamalı
+          (box as any).isFixed = false;
+
+          // Momentum aktarımı (p = mv)
+          const projectileMomentum = {
+            x: projectile.mass * projectile.velocity.x,
+            y: projectile.mass * projectile.velocity.y,
+          };
+
+          // Yeni hız hesaplama (v = p / m)
+          const totalMass = projectile.mass + box.mass;
+          const newVelocity = {
+            x: projectileMomentum.x / totalMass,
+            y: projectileMomentum.y / totalMass,
+          };
+
+          return {
+            hasCollided: true,
+            newVelocity1: multiplyVector(projectile.velocity, 0.8),
+            newVelocity2: newVelocity,
+            collisionPoint,
+            impulse: magnitude(projectileMomentum),
+            penetration: (projectile as any).penetration,
+            boxPerforated,
+          };
         }
       }
 
@@ -220,7 +243,16 @@ export const detectProjectileBoxCollision = (
         ),
         newVelocity2: box.isFixed
           ? box.velocity
-          : multiplyVector(box.velocity, 1.1), // Slight push to the box
+          : {
+              x:
+                (box.velocity.x * box.mass +
+                  projectile.velocity.x * projectile.mass) /
+                (box.mass + projectile.mass),
+              y:
+                (box.velocity.y * box.mass +
+                  projectile.velocity.y * projectile.mass) /
+                (box.mass + projectile.mass),
+            },
         collisionPoint,
         impulse: projectile.mass * speed,
         penetration: (projectile as any).penetration,
@@ -228,52 +260,82 @@ export const detectProjectileBoxCollision = (
       };
     } else {
       // Projectile is already inside, continue reducing its penetration and velocity
-      const penetrationDecrement = box.isFixed ? 0.05 : 0.1;
+      const penetrationDecrement = box.isFixed && !box.perforated ? 0.05 : 0.1;
       (projectile as any).penetration = Math.max(
         0,
         (projectile as any).penetration - penetrationDecrement
       );
 
-      // If box is fixed and penetration reached zero, stop the projectile inside the box
+      // If penetration reached zero, handle the collision result
       if ((projectile as any).penetration <= 0) {
-        // For fixed boxes, if the box is already perforated, let the projectile go through
-        if (box.isFixed && box.perforated) {
-          // Calculate exit point on the opposite side
-          const entry = projectile.entryPoint!;
-          const velocity = projectile.velocity;
+        // For perforated boxes, let the projectile go through and transfer momentum
+        if (box.perforated) {
+          const projectileMomentum = {
+            x: projectile.mass * projectile.velocity.x,
+            y: projectile.mass * projectile.velocity.y,
+          };
 
-          // The projectile continues with reduced velocity
+          const totalMass = projectile.mass + box.mass;
+          const newVelocity = {
+            x: (projectileMomentum.x + box.mass * box.velocity.x) / totalMass,
+            y: (projectileMomentum.y + box.mass * box.velocity.y) / totalMass,
+          };
+
           return {
             hasCollided: true,
-            newVelocity1: multiplyVector(projectile.velocity, 0.8), // Hızı daha az azaltalım (0.6 -> 0.8)
-            newVelocity2: box.velocity,
+            newVelocity1: multiplyVector(projectile.velocity, 0.8),
+            newVelocity2: newVelocity,
             collisionPoint,
-            impulse: 0,
+            impulse: magnitude(projectileMomentum),
             boxPerforated: true,
           };
         } else {
-          // Mark the projectile as stuck
+          // Mermi kutuya saplandı, momentumu kutuya aktar
           (projectile as any).stuckInside = true;
+
+          // Her durumda momentum aktarımını dene
+          const projectileMomentum = {
+            x: projectile.mass * projectile.velocity.x,
+            y: projectile.mass * projectile.velocity.y,
+          };
+
+          const totalMass = projectile.mass + box.mass;
+          const newBoxVelocity = {
+            x: (projectileMomentum.x + box.mass * box.velocity.x) / totalMass,
+            y: (projectileMomentum.y + box.mass * box.velocity.y) / totalMass,
+          };
 
           return {
             hasCollided: true,
-            newVelocity1: { x: 0, y: 0 },
-            newVelocity2: box.velocity,
+            newVelocity1: newBoxVelocity,
+            newVelocity2: newBoxVelocity,
             collisionPoint,
-            impulse: 0,
+            impulse: magnitude(projectileMomentum),
+            boxPerforated: false,
           };
         }
-      } else {
-        // Continue slowing down the projectile
-        const slowdownFactor = box.isFixed ? 0.8 : 0.9;
-        return {
-          hasCollided: true,
-          newVelocity1: multiplyVector(projectile.velocity, slowdownFactor),
-          newVelocity2: box.velocity,
-          collisionPoint,
-          impulse: projectile.mass * magnitude(projectile.velocity) * 0.2,
-        };
       }
+
+      // Continue with reduced velocity while inside
+      return {
+        hasCollided: true,
+        newVelocity1: multiplyVector(projectile.velocity, 0.95),
+        newVelocity2: !box.isFixed
+          ? {
+              x:
+                (box.velocity.x * box.mass +
+                  projectile.velocity.x * projectile.mass) /
+                (box.mass + projectile.mass),
+              y:
+                (box.velocity.y * box.mass +
+                  projectile.velocity.y * projectile.mass) /
+                (box.mass + projectile.mass),
+            }
+          : box.velocity,
+        collisionPoint,
+        impulse: projectile.mass * magnitude(projectile.velocity) * 0.1,
+        boxPerforated: false,
+      };
     }
   } else {
     // Normal from collision point to circle center

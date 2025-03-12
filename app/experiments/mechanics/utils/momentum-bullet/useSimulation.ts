@@ -18,6 +18,16 @@ interface SimulationOptions {
   wallElasticity: number;
 }
 
+// Optimizasyon için performans ayarları
+const PERFORMANCE_CONFIG = {
+  // Mobil cihazlar için daha düşük FPS hedefi
+  targetFPS: Platform.OS === 'web' ? 60 : 30,
+  // State güncellemelerini gruplandırmak için gecikme eşiği (ms)
+  updateThreshold: 16, // yaklaşık 60fps için bir frame süresi
+  // Mobil cihazlar için pozisyon güncellemelerini yumuşatma faktörü
+  smoothingFactor: Platform.OS === 'web' ? 1.0 : 0.8,
+};
+
 export function useSimulation(options: SimulationOptions) {
   const [projectiles, setProjectiles] = useState<Projectile[]>([]);
   const [targetBox, setTargetBox] = useState<TargetBox>({
@@ -28,7 +38,7 @@ export function useSimulation(options: SimulationOptions) {
     color: '#6B7280',
     elasticity: 0.8,
     velocity: { x: 0, y: 0 },
-    isFixed: true,
+    isFixed: false,
     hardness: 8,
     thickness: 5,
     perforated: false,
@@ -47,10 +57,25 @@ export function useSimulation(options: SimulationOptions) {
     collisionCount: 0,
   });
 
+  // Referans değerleri - daha az re-render için
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateTimeRef = useRef<number>(0);
+  const stateUpdateTimeRef = useRef<number>(0);
   const canvasWidthRef = useRef<number>(options.width);
   const canvasHeightRef = useRef<number>(options.height);
+  const projectilesRef = useRef<Projectile[]>(projectiles);
+  const targetBoxRef = useRef<TargetBox>(targetBox);
+  const velocityAccumulatorRef = useRef({ x: 0, y: 0 });
+  const needsRenderUpdateRef = useRef(false);
+
+  // Ref değerlerini state ile senkronize et
+  useEffect(() => {
+    projectilesRef.current = projectiles;
+  }, [projectiles]);
+
+  useEffect(() => {
+    targetBoxRef.current = targetBox;
+  }, [targetBox]);
 
   useEffect(() => {
     canvasWidthRef.current = options.width;
@@ -100,20 +125,22 @@ export function useSimulation(options: SimulationOptions) {
   }, []);
 
   const startSimulation = useCallback(() => {
-    if (projectiles.length === 0) {
+    if (projectilesRef.current.length === 0) {
       if (Platform.OS === 'web') {
         console.log('Önce en az bir mermi ekleyin!');
       }
       return;
     }
     setIsRunning(true);
-    lastUpdateTimeRef.current = Date.now();
+    lastUpdateTimeRef.current = performance.now();
+    stateUpdateTimeRef.current = performance.now();
+    velocityAccumulatorRef.current = { x: 0, y: 0 };
     setCollisionData({
       hasCollided: false,
       impulse: 0,
       collisionCount: 0,
     });
-  }, [projectiles.length]);
+  }, []);
 
   const pauseSimulation = useCallback(() => {
     setIsRunning(false);
@@ -156,11 +183,22 @@ export function useSimulation(options: SimulationOptions) {
     setTargetBox((prev) => ({ ...prev, mode }));
   }, []);
 
+  // Hareket ve çarpışma mantığını içeren ana fonksiyon
+  // Performans optimizasyonları burada yapılacak
   useEffect(() => {
     if (!isRunning) return;
 
     let lastFrameTime = performance.now();
-    const targetFrameTime = 1000 / 60; // Hedef 60 FPS
+    // Hedef frame süresi (örn: 60 FPS için 16.66ms)
+    const targetFrameTime = 1000 / PERFORMANCE_CONFIG.targetFPS;
+
+    // Hafif titremeleri engellemek için değer yuvarlamak için fonksiyon
+    const roundPosition = (value: number) => {
+      // Mobil cihazlarda daha fazla yuvarla (performans için)
+      return Platform.OS === 'web'
+        ? Math.round(value * 100) / 100
+        : Math.round(value * 10) / 10;
+    };
 
     const updateSimulation = (timestamp: number) => {
       const currentTime = performance.now();
@@ -174,6 +212,7 @@ export function useSimulation(options: SimulationOptions) {
 
       lastFrameTime = currentTime;
 
+      // Çok büyük zaman farkları oluşmasını engelle (tarayıcı sekme değişimi vb.)
       if (deltaTime > 0.1) {
         animationFrameRef.current = requestAnimationFrame(updateSimulation);
         return;
@@ -181,200 +220,237 @@ export function useSimulation(options: SimulationOptions) {
 
       const scaledDelta = deltaTime * timeScale;
 
-      // Kutunun pozisyonunu güncelle, sonra mermileri güncelle
-      // Önce kutu pozisyonunu güncelleyelim
+      // Yerel değişkenlerde hesaplama yaparak state güncellemelerini azalt
+      const currentTargetBox = { ...targetBoxRef.current };
       let boxPositionUpdated = false;
-      let newBoxPosition = { ...targetBox.position };
+      let newBoxPosition = { ...currentTargetBox.position };
+      let hasCollision = false;
+      let maxImpulse = 0;
 
-      if (!targetBox.isFixed) {
-        if (targetBox.velocity.x !== 0 || targetBox.velocity.y !== 0) {
+      // Kutu hareketi - sabit değilse konumunu güncelle
+      if (!currentTargetBox.isFixed) {
+        if (
+          currentTargetBox.velocity.x !== 0 ||
+          currentTargetBox.velocity.y !== 0
+        ) {
+          // Yumuşatma faktörü uygula
+          const smoothedVelocity = {
+            x: currentTargetBox.velocity.x * PERFORMANCE_CONFIG.smoothingFactor,
+            y: currentTargetBox.velocity.y * PERFORMANCE_CONFIG.smoothingFactor,
+          };
+
           newBoxPosition = addVectors(
-            targetBox.position,
-            multiplyVector(targetBox.velocity, scaledDelta)
+            currentTargetBox.position,
+            multiplyVector(smoothedVelocity, scaledDelta)
           );
 
           // Duvar çarpışma kontrolü
           if (newBoxPosition.x < 0) {
             newBoxPosition.x = 0;
-            targetBox.velocity.x = -targetBox.velocity.x * wallElasticity;
+            currentTargetBox.velocity.x =
+              -currentTargetBox.velocity.x * wallElasticity;
           } else if (
-            newBoxPosition.x + targetBox.width >
+            newBoxPosition.x + currentTargetBox.width >
             canvasWidthRef.current
           ) {
-            newBoxPosition.x = canvasWidthRef.current - targetBox.width;
-            targetBox.velocity.x = -targetBox.velocity.x * wallElasticity;
+            newBoxPosition.x = canvasWidthRef.current - currentTargetBox.width;
+            currentTargetBox.velocity.x =
+              -currentTargetBox.velocity.x * wallElasticity;
           }
 
           if (newBoxPosition.y < 0) {
             newBoxPosition.y = 0;
-            targetBox.velocity.y = -targetBox.velocity.y * wallElasticity;
+            currentTargetBox.velocity.y =
+              -currentTargetBox.velocity.y * wallElasticity;
           } else if (
-            newBoxPosition.y + targetBox.height >
+            newBoxPosition.y + currentTargetBox.height >
             canvasHeightRef.current
           ) {
-            newBoxPosition.y = canvasHeightRef.current - targetBox.height;
-            targetBox.velocity.y = -targetBox.velocity.y * wallElasticity;
+            newBoxPosition.y =
+              canvasHeightRef.current - currentTargetBox.height;
+            currentTargetBox.velocity.y =
+              -currentTargetBox.velocity.y * wallElasticity;
           }
 
-          boxPositionUpdated = true;
-          setTargetBox((prevBox) => ({
-            ...prevBox,
-            position: newBoxPosition,
+          // Pozisyonları yuvarla (mobil performansı için)
+          newBoxPosition.x = roundPosition(newBoxPosition.x);
+          newBoxPosition.y = roundPosition(newBoxPosition.y);
+
+          // Değişiklik olmuşsa güncelle
+          if (
+            newBoxPosition.x !== currentTargetBox.position.x ||
+            newBoxPosition.y !== currentTargetBox.position.y
+          ) {
+            currentTargetBox.position = newBoxPosition;
+            boxPositionUpdated = true;
+            needsRenderUpdateRef.current = true;
+          }
+        }
+      }
+
+      // Mermilerin pozisyonlarını güncelle
+      const updatedProjectiles = [...projectilesRef.current];
+      let projectilesChanged = false;
+
+      for (let i = 0; i < updatedProjectiles.length; i++) {
+        const p = updatedProjectiles[i];
+
+        // Eğer mermi kutuya saplanmışsa, kutunun hareketiyle birlikte güncelle
+        if (p.stuckInside && currentTargetBox.mode === CollisionMode.BULLET) {
+          if (boxPositionUpdated) {
+            // Merminin kutuya göre göreceli pozisyonunu hesapla
+            const offsetX = p.position.x - targetBoxRef.current.position.x;
+            const offsetY = p.position.y - targetBoxRef.current.position.y;
+
+            // Bağıl pozisyonu koruyarak yeni konumu belirle ve yuvarla
+            p.position = {
+              x: roundPosition(newBoxPosition.x + offsetX),
+              y: roundPosition(newBoxPosition.y + offsetY),
+            };
+
+            // Merminin hızını kutunun hızına eşitle
+            p.velocity = { ...currentTargetBox.velocity };
+            projectilesChanged = true;
+          }
+          continue; // Saplanmış mermilerin fizik hesaplaması yapmıyoruz
+        }
+
+        if (
+          p.penetration !== undefined &&
+          p.penetration <= 0 &&
+          !currentTargetBox.perforated
+        ) {
+          continue;
+        }
+
+        // Merminin pozisyonunu güncelle ve yuvarla
+        p.position = {
+          x: roundPosition(p.position.x + p.velocity.x * scaledDelta),
+          y: roundPosition(p.position.y + p.velocity.y * scaledDelta),
+        };
+
+        // Duvar çarpışmaları
+        if (p.position.x - p.radius < 0) {
+          p.position.x = p.radius;
+          p.velocity.x = -p.velocity.x * wallElasticity;
+        } else if (p.position.x + p.radius > canvasWidthRef.current) {
+          p.position.x = canvasWidthRef.current - p.radius;
+          p.velocity.x = -p.velocity.x * wallElasticity;
+        }
+
+        if (p.position.y - p.radius < 0) {
+          p.position.y = p.radius;
+          p.velocity.y = -p.velocity.y * wallElasticity;
+        } else if (p.position.y + p.radius > canvasHeightRef.current) {
+          p.position.y = canvasHeightRef.current - p.radius;
+          p.velocity.y = -p.velocity.y * wallElasticity;
+        }
+
+        projectilesChanged = true;
+      }
+
+      // Çarpışma kontrolü
+      for (let i = 0; i < updatedProjectiles.length; i++) {
+        const projectile = updatedProjectiles[i];
+        if (
+          projectile.stuckInside ||
+          (projectile.penetration !== undefined &&
+            projectile.penetration <= 0 &&
+            !currentTargetBox.perforated)
+        ) {
+          continue;
+        }
+
+        // Çarpışma tespit et
+        const collision = detectProjectileBoxCollision(
+          projectile,
+          currentTargetBox
+        );
+
+        if (collision.hasCollided) {
+          projectilesChanged = true;
+          hasCollision = true;
+
+          if (collision.newVelocity1) {
+            projectile.velocity = collision.newVelocity1;
+          }
+
+          // Mermi modunda saplanma
+          if (currentTargetBox.mode === CollisionMode.BULLET) {
+            projectile.stuckInside = true;
+          }
+
+          if (collision.penetration !== undefined) {
+            projectile.penetration = collision.penetration;
+          }
+
+          if (collision.boxPerforated) {
+            currentTargetBox.perforated = true;
+            currentTargetBox.isFixed = false;
+            needsRenderUpdateRef.current = true;
+          }
+
+          if (!currentTargetBox.isFixed && collision.newVelocity2) {
+            currentTargetBox.velocity = collision.newVelocity2;
+            needsRenderUpdateRef.current = true;
+          }
+
+          if (
+            collision.impulse &&
+            Math.abs(collision.impulse) > Math.abs(maxImpulse)
+          ) {
+            maxImpulse = collision.impulse;
+          }
+        }
+      }
+
+      // Toplu state güncellemeleri - optimize edilmiş render için
+      const timeNow = performance.now();
+      const timeSinceLastUpdate = timeNow - stateUpdateTimeRef.current;
+
+      // Yalnızca belirli aralıklarla veya önemli değişiklikler olduğunda state'i güncelle
+      if (
+        timeSinceLastUpdate > PERFORMANCE_CONFIG.updateThreshold ||
+        needsRenderUpdateRef.current
+      ) {
+        // Kutunun konumu değiştiyse state'i güncelle
+        if (boxPositionUpdated || needsRenderUpdateRef.current) {
+          setTargetBox(currentTargetBox);
+        }
+
+        // Mermilerin konumu değiştiyse state'i güncelle
+        if (projectilesChanged) {
+          setProjectiles(updatedProjectiles);
+        }
+
+        // Çarpışma verileri güncelle
+        if (hasCollision) {
+          setCollisionData((prev) => ({
+            hasCollided: true,
+            impulse: Math.abs(maxImpulse),
+            collisionCount: prev.collisionCount + 1,
           }));
         }
+
+        // Zamanı ve bayrağı sıfırla
+        stateUpdateTimeRef.current = timeNow;
+        needsRenderUpdateRef.current = false;
       }
 
-      // Şimdi mermileri güncelle
-      setProjectiles((prevProjectiles) => {
-        const updatedProjectiles = [...prevProjectiles];
-        let hasChanges = false;
-
-        // Toplu güncelleme için tüm hesaplamaları yap
-        for (let i = 0; i < updatedProjectiles.length; i++) {
-          const p = updatedProjectiles[i];
-
-          // Eğer mermi kutuya saplanmışsa, kutunun hareketiyle birlikte güncelle
-          if (p.stuckInside) {
-            if (boxPositionUpdated) {
-              // Merminin kutuya göre bağıl pozisyonunu hesapla (kutu ile arasındaki fark)
-              const offsetX = p.position.x - targetBox.position.x;
-              const offsetY = p.position.y - targetBox.position.y;
-
-              // Bağıl pozisyonu koruyarak merminin yeni pozisyonunu güncelle
-              p.position = {
-                x: newBoxPosition.x + offsetX,
-                y: newBoxPosition.y + offsetY,
-              };
-
-              // Merminin hızını kutuyla aynı yap
-              p.velocity = { ...targetBox.velocity };
-              hasChanges = true;
-            }
-            continue; // Saplanmış mermilerin fizik hesaplaması yapmıyoruz
-          }
-
-          if (
-            p.penetration !== undefined &&
-            p.penetration <= 0 &&
-            !targetBox.perforated
-          ) {
-            continue;
-          }
-
-          p.position = addVectors(
-            p.position,
-            multiplyVector(p.velocity, scaledDelta)
-          );
-          handleWallCollisions(p);
-          hasChanges = true;
-        }
-
-        // Eğer değişiklik yoksa aynı array'i döndür
-        return hasChanges ? updatedProjectiles : prevProjectiles;
-      });
-
-      // Çarpışma kontrollerini ve diğer işlemleri yap
-      let collisionOccurred = false;
-      let maxImpulse = 0;
-      let boxPerforated = targetBox.perforated;
-
-      setProjectiles((prevProjectiles) => {
-        const updatedProjectiles = [...prevProjectiles];
-        let hasCollisionChanges = false;
-
-        for (let i = 0; i < updatedProjectiles.length; i++) {
-          const projectile = updatedProjectiles[i];
-          if (
-            projectile.stuckInside ||
-            (projectile.penetration !== undefined &&
-              projectile.penetration <= 0 &&
-              !boxPerforated)
-          ) {
-            continue;
-          }
-
-          const collision = detectProjectileBoxCollision(projectile, targetBox);
-
-          if (collision.hasCollided) {
-            hasCollisionChanges = true;
-            if (collision.newVelocity1) {
-              projectile.velocity = collision.newVelocity1;
-            }
-
-            // Mermi modunda, çarpışma sonrası mermi saplanmış olarak işaretlenir
-            if (targetBox.mode === CollisionMode.BULLET) {
-              projectile.stuckInside = true;
-            }
-
-            if (collision.penetration !== undefined) {
-              projectile.penetration = collision.penetration;
-            }
-
-            if (collision.boxPerforated) {
-              boxPerforated = true;
-              setTargetBox((prev) => ({
-                ...prev,
-                perforated: true,
-              }));
-            }
-
-            if (!targetBox.isFixed && collision.newVelocity2) {
-              setTargetBox((prev) => ({
-                ...prev,
-                velocity: collision.newVelocity2!,
-              }));
-            }
-
-            collisionOccurred = true;
-            if (
-              collision.impulse &&
-              Math.abs(collision.impulse) > Math.abs(maxImpulse)
-            ) {
-              maxImpulse = collision.impulse;
-            }
-          }
-        }
-
-        return hasCollisionChanges ? updatedProjectiles : prevProjectiles;
-      });
-
-      if (collisionOccurred) {
-        setCollisionData((prev) => ({
-          hasCollided: true,
-          impulse: Math.abs(maxImpulse),
-          collisionCount: prev.collisionCount + 1,
-        }));
-      }
-
+      // Animasyon döngüsünü devam ettir
       animationFrameRef.current = requestAnimationFrame(updateSimulation);
     };
 
-    const handleWallCollisions = (p: Projectile) => {
-      if (p.position.x - p.radius < 0) {
-        p.position.x = p.radius;
-        p.velocity.x = -p.velocity.x * wallElasticity;
-      } else if (p.position.x + p.radius > canvasWidthRef.current) {
-        p.position.x = canvasWidthRef.current - p.radius;
-        p.velocity.x = -p.velocity.x * wallElasticity;
-      }
-
-      if (p.position.y - p.radius < 0) {
-        p.position.y = p.radius;
-        p.velocity.y = -p.velocity.y * wallElasticity;
-      } else if (p.position.y + p.radius > canvasHeightRef.current) {
-        p.position.y = canvasHeightRef.current - p.radius;
-        p.velocity.y = -p.velocity.y * wallElasticity;
-      }
-    };
-
+    // Animasyon döngüsünü başlat
     animationFrameRef.current = requestAnimationFrame(updateSimulation);
 
+    // Cleanup fonksiyonu
     return () => {
       if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isRunning, timeScale, wallElasticity, targetBox]);
+  }, [isRunning, timeScale, wallElasticity]);
 
   useEffect(() => {
     return () => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,12 @@ import {
   TextInput,
   Platform,
   ScrollView,
+  Switch,
 } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { Switch } from 'react-native';
-import { TargetBox } from '../../utils/momentum-bullet/physics';
 import { useLanguage } from '../../../../../components/LanguageContext';
+import { TargetBox } from '../../utils/momentum-bullet/physics';
+import { MaterialIcons } from '@expo/vector-icons';
 
 interface ProjectileSettingsProps {
   canvasWidth: number;
@@ -33,6 +34,16 @@ const ProjectileSettings = ({
   const { t } = useLanguage();
   const [mass, setMass] = useState(5);
   const [velocity, setVelocity] = useState(30);
+  const [boxSettings, setBoxSettings] = useState({
+    mass: targetBox.mass || 10,
+    hardness: targetBox.hardness || 8,
+    thickness: targetBox.thickness || 5,
+    isFixed: false,
+  });
+
+  useEffect(() => {
+    onUpdateTargetBox({ isFixed: boxSettings.isFixed });
+  }, []);
 
   // Hedef kutu sertliği için değişiklik işleyicisi
   const handleHardnessChange = (value: number) => {

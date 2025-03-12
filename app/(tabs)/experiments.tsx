@@ -182,16 +182,27 @@ const experiments: Experiment[] = [
   {
     id: '12',
     title: 'Moment Dengesi',
-    titleEn: 'Torque Balance',
+    titleEn: 'Moment Balance',
     category: 'mechanics',
     difficulty: 'Orta Seviye',
     difficultyEn: 'Intermediate',
-    description: 'Tork ve denge koşulları',
-    descriptionEn: 'Torque and equilibrium conditions',
+    description: 'Moment dengesi ve tork hesaplamaları',
+    descriptionEn: 'Moment balance and torque calculations',
     route: '/experiments/mechanics/moment-balance' as any,
   },
   {
     id: '13',
+    title: 'Mermi-Kutu Çarpışması',
+    titleEn: 'Bullet-Box Collision',
+    category: 'mechanics',
+    difficulty: 'Orta Seviye',
+    difficultyEn: 'Intermediate',
+    description: 'Mermi-kutu çarpışması ve momentum aktarımı',
+    descriptionEn: 'Bullet-box collision and momentum transfer',
+    route: '/experiments/mechanics/momentum-bullet' as any,
+  },
+  {
+    id: '14',
     title: 'Çift Yarık Deneyi',
     titleEn: 'Double Slit Experiment',
     category: 'waves',
@@ -202,7 +213,7 @@ const experiments: Experiment[] = [
     route: '/experiments/waves/double-slit' as any,
   },
   {
-    id: '14',
+    id: '15',
     title: 'Dalga Girişimi',
     titleEn: 'Wave Interference',
     category: 'waves',
@@ -213,7 +224,7 @@ const experiments: Experiment[] = [
     route: '/experiments/waves/wave-interference' as any,
   },
   {
-    id: '15',
+    id: '16',
     title: 'Enine Dalga',
     titleEn: 'Transverse Wave',
     category: 'waves',
@@ -224,7 +235,7 @@ const experiments: Experiment[] = [
     route: '/experiments/waves/transverse-wave' as any,
   },
   {
-    id: '16',
+    id: '17',
     title: 'Optik Sistemler',
     titleEn: 'Optical Systems',
     category: 'waves',
@@ -235,7 +246,7 @@ const experiments: Experiment[] = [
     route: '/experiments/waves/optical-systems' as any,
   },
   {
-    id: '17',
+    id: '18',
     title: 'Doppler Etkisi',
     titleEn: 'Doppler Effect',
     category: 'waves',
@@ -246,7 +257,7 @@ const experiments: Experiment[] = [
     route: '/experiments/waves/doppler-effect' as any,
   },
   {
-    id: '18',
+    id: '19',
     title: 'Elektrik Alan',
     titleEn: 'Electric Field',
     category: 'electricity',
@@ -257,7 +268,7 @@ const experiments: Experiment[] = [
     route: '/experiments/electricity/electric-field' as any,
   },
   {
-    id: '19',
+    id: '20',
     title: 'RLC Devresi',
     titleEn: 'RLC Circuit',
     category: 'electricity',
@@ -268,7 +279,7 @@ const experiments: Experiment[] = [
     route: '/experiments/electricity/rlc-circuit' as any,
   },
   {
-    id: '20',
+    id: '21',
     title: 'Transformatör',
     titleEn: 'Transformer',
     category: 'electricity',
@@ -279,7 +290,7 @@ const experiments: Experiment[] = [
     route: '/experiments/electricity/transformer' as any,
   },
   {
-    id: '21',
+    id: '22',
     title: 'Göreceli Hareket',
     titleEn: 'Relative Motion',
     category: 'basics',
@@ -290,7 +301,7 @@ const experiments: Experiment[] = [
     route: '/experiments/basics/relative-motion' as any,
   },
   {
-    id: '22',
+    id: '23',
     title: 'Coriolis Hareketi',
     titleEn: 'Coriolis Effect',
     category: 'basics',
@@ -301,7 +312,7 @@ const experiments: Experiment[] = [
     route: '/experiments/basics/coriolis-effect' as any,
   },
   {
-    id: '23',
+    id: '24',
     title: 'Kaldırma Kuvveti',
     titleEn: 'Buoyancy',
     category: 'basics',
@@ -312,7 +323,7 @@ const experiments: Experiment[] = [
     route: '/experiments/basics/buoyancy' as any,
   },
   {
-    id: '24',
+    id: '25',
     title: 'Sıvı Basıncı',
     titleEn: 'Fluid Pressure',
     category: 'basics',
@@ -323,7 +334,7 @@ const experiments: Experiment[] = [
     route: '/experiments/basics/pressure' as any,
   },
   {
-    id: '25',
+    id: '26',
     title: 'Ohm Yasası',
     titleEn: "Ohm's Law",
     category: 'electricity',
@@ -336,7 +347,7 @@ const experiments: Experiment[] = [
     route: '/experiments/electric/ohm-law' as any,
   },
   {
-    id: '26',
+    id: '27',
     title: 'RLC Devre Laboratuvarı',
     titleEn: 'RLC Circuit Laboratory',
     category: 'electricity',

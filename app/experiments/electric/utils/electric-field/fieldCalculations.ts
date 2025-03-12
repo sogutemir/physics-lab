@@ -161,3 +161,57 @@ export const calculateFieldLine = (
 
   return points;
 };
+
+// İki yük arasındaki potansiyel enerjiyi hesapla (J)
+export const calculatePotentialEnergy = (
+  charge1: Charge,
+  charge2: Charge
+): number => {
+  const distance = calculateDistance(
+    charge1.x,
+    charge1.y,
+    charge2.x,
+    charge2.y
+  );
+
+  // Çok yakın bir noktada ise aşırı büyük değerleri önle
+  if (distance < 1) return 0;
+
+  // Potansiyel enerji = k * q1 * q2 / r
+  return (COULOMB_CONSTANT * charge1.value * charge2.value) / distance;
+};
+
+// Sistemdeki toplam potansiyel enerjiyi hesapla
+export const calculateTotalPotentialEnergy = (charges: Charge[]): number => {
+  let totalEnergy = 0;
+
+  // Her çift yük için potansiyel enerjiyi hesapla ve topla
+  for (let i = 0; i < charges.length; i++) {
+    for (let j = i + 1; j < charges.length; j++) {
+      totalEnergy += calculatePotentialEnergy(charges[i], charges[j]);
+    }
+  }
+
+  return totalEnergy;
+};
+
+// Belli bir noktadaki elektrik potansiyelini hesapla (V)
+export const calculateElectricPotential = (
+  x: number,
+  y: number,
+  charges: Charge[]
+): number => {
+  let potential = 0;
+
+  charges.forEach((charge) => {
+    const distance = calculateDistance(x, y, charge.x, charge.y);
+
+    // Çok yakın bir noktada ise sonsuz değerleri önle
+    if (distance < 0.1) return;
+
+    // Elektrik potansiyeli: V = k * q / r
+    potential += (COULOMB_CONSTANT * charge.value) / distance;
+  });
+
+  return potential;
+};

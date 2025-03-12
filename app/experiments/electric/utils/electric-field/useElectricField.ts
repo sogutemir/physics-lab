@@ -5,6 +5,9 @@ import {
   calculateElectricField,
   calculateForceOnCharge,
   calculateFieldLine,
+  calculatePotentialEnergy,
+  calculateTotalPotentialEnergy,
+  calculateElectricPotential,
 } from './fieldCalculations';
 
 interface UseElectricFieldProps {
@@ -30,6 +33,17 @@ interface UseElectricFieldReturn {
   startSimulation: () => void;
   pauseSimulation: () => void;
   resetSimulation: () => void;
+  chargeInteractions: {
+    charge1Id: string;
+    charge2Id: string;
+    distance: number;
+    potentialEnergy: number;
+    isRepulsive: boolean;
+  }[];
+  totalPotentialEnergy: number;
+  measurePoint: { x: number; y: number } | null;
+  setMeasurePoint: (point: { x: number; y: number } | null) => void;
+  potentialAtPoint: number | null;
 }
 
 export const useElectricField = ({
@@ -54,6 +68,29 @@ export const useElectricField = ({
 
   // Animasyon frame ID
   const animationFrameId = useRef<number | null>(null);
+
+  // Ölçüm noktası
+  const [measurePoint, setMeasurePoint] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
+  // Ölçüm noktasındaki potansiyel
+  const [potentialAtPoint, setPotentialAtPoint] = useState<number | null>(null);
+
+  // Yükler arası etkileşimler
+  const [chargeInteractions, setChargeInteractions] = useState<
+    {
+      charge1Id: string;
+      charge2Id: string;
+      distance: number;
+      potentialEnergy: number;
+      isRepulsive: boolean;
+    }[]
+  >([]);
+
+  // Sistemin toplam potansiyel enerjisi
+  const [totalPotentialEnergy, setTotalPotentialEnergy] = useState<number>(0);
 
   // Yeni bir yük ekle
   const addCharge = useCallback(
@@ -199,6 +236,48 @@ export const useElectricField = ({
     setFieldLines(lines);
   }, [charges]);
 
+  // Etkileşimleri hesapla
+  const calculateInteractions = useCallback(() => {
+    if (charges.length < 2) {
+      setChargeInteractions([]);
+      setTotalPotentialEnergy(0);
+      return;
+    }
+
+    const interactions = [];
+
+    for (let i = 0; i < charges.length; i++) {
+      for (let j = i + 1; j < charges.length; j++) {
+        const charge1 = charges[i];
+        const charge2 = charges[j];
+        const distance = Math.sqrt(
+          Math.pow(charge1.x - charge2.x, 2) +
+            Math.pow(charge1.y - charge2.y, 2)
+        );
+
+        const energy = calculatePotentialEnergy(charge1, charge2);
+
+        // Aynı işaretli yükler birbirini iter, zıt işaretli yükler çeker
+        const isRepulsive =
+          Math.sign(charge1.value) === Math.sign(charge2.value);
+
+        interactions.push({
+          charge1Id: charge1.id,
+          charge2Id: charge2.id,
+          distance,
+          potentialEnergy: energy,
+          isRepulsive,
+        });
+      }
+    }
+
+    setChargeInteractions(interactions);
+
+    // Toplam potansiyel enerjiyi hesapla
+    const totalEnergy = calculateTotalPotentialEnergy(charges);
+    setTotalPotentialEnergy(totalEnergy);
+  }, [charges]);
+
   // Yüklerin hareketi güncelleme fonksiyonu
   const updateChargesPosition = useCallback(() => {
     if (!isRunning) return;
@@ -232,11 +311,33 @@ export const useElectricField = ({
     animationFrameId.current = requestAnimationFrame(updateChargesPosition);
   }, [isRunning, width, height]);
 
-  // Yükler değiştiğinde alan vektörlerini ve çizgilerini güncelle
+  // Ölçüm noktasındaki elektrik potansiyelini hesapla
+  useEffect(() => {
+    if (!measurePoint || charges.length === 0) {
+      setPotentialAtPoint(null);
+      return;
+    }
+
+    const potential = calculateElectricPotential(
+      measurePoint.x,
+      measurePoint.y,
+      charges
+    );
+
+    setPotentialAtPoint(potential);
+  }, [measurePoint, charges]);
+
+  // Yükler değiştiğinde alan vektörlerini, çizgilerini ve etkileşimleri güncelle
   useEffect(() => {
     calculateFieldVectors();
     calculateFieldLines();
-  }, [charges, calculateFieldVectors, calculateFieldLines]);
+    calculateInteractions();
+  }, [
+    charges,
+    calculateFieldVectors,
+    calculateFieldLines,
+    calculateInteractions,
+  ]);
 
   // Simülasyon durumu değiştiğinde animasyonu güncelle
   useEffect(() => {
@@ -279,5 +380,10 @@ export const useElectricField = ({
     startSimulation,
     pauseSimulation,
     resetSimulation,
+    chargeInteractions,
+    totalPotentialEnergy,
+    measurePoint,
+    setMeasurePoint,
+    potentialAtPoint,
   };
 };

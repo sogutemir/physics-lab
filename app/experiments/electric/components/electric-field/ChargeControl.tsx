@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
+  Dimensions,
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useLanguage } from '../../../../../components/LanguageContext';
@@ -47,6 +48,7 @@ const ValueSlider: React.FC<ValueSliderProps> = ({
       step={step}
       minimumTrackTintColor={minimumTrackTintColor}
       maximumTrackTintColor={maximumTrackTintColor}
+      style={styles.slider}
     />
   );
 };
@@ -61,9 +63,12 @@ const ChargeControl: React.FC<ChargeControlProps> = ({
 }) => {
   const { t } = useLanguage();
   const [chargeValue, setChargeValue] = useState<number>(1);
+  const isWeb = Platform.OS === 'web';
+  const screenWidth = Dimensions.get('window').width;
+  const isMobile = !isWeb || screenWidth < 768;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isMobile && styles.containerMobile]}>
       <View style={styles.header}>
         <Text style={styles.title}>{t('Yük Kontrolü', 'Charge Controls')}</Text>
         <View style={styles.simControls}>
@@ -85,9 +90,12 @@ const ChargeControl: React.FC<ChargeControlProps> = ({
       </View>
 
       <View style={styles.sliderContainer}>
-        <Text style={styles.sliderLabel}>
-          {t('Yük Değeri:', 'Charge Value:')} {chargeValue.toFixed(1)}
-        </Text>
+        <View style={styles.sliderLabelRow}>
+          <Text style={styles.sliderLabel}>
+            {t('Yük Değeri:', 'Charge Value:')}
+          </Text>
+          <Text style={styles.sliderValue}>{chargeValue.toFixed(1)}</Text>
+        </View>
         <ValueSlider
           value={chargeValue}
           onValueChange={setChargeValue}
@@ -137,8 +145,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 16,
-    marginTop: 16,
-    marginBottom: 16,
+    flex: 1,
+    minWidth: Platform.OS === 'web' ? 320 : '100%',
+    maxWidth: Platform.OS === 'web' ? 400 : '100%',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -154,16 +163,21 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  containerMobile: {
+    maxWidth: '100%',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+    flexWrap: 'wrap',
   },
   title: {
     fontSize: 18,
     fontWeight: '600',
     color: '#2c3e50',
+    marginBottom: 4,
   },
   simControls: {
     flexDirection: 'row',
@@ -171,36 +185,54 @@ const styles = StyleSheet.create({
   sliderContainer: {
     marginBottom: 16,
   },
+  sliderLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   sliderLabel: {
     fontSize: 14,
-    marginBottom: 8,
     color: '#555',
+  },
+  sliderValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2c3e50',
+  },
+  slider: {
+    width: '100%',
+    height: 40,
   },
   chargeButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 16,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   button: {
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 100,
   },
   smallButton: {
     padding: 8,
     paddingHorizontal: 16,
     marginLeft: 8,
+    minWidth: 0,
   },
   positiveButton: {
     backgroundColor: '#e74c3c',
     flex: 1,
-    marginRight: 8,
+    marginRight: 4,
   },
   negativeButton: {
     backgroundColor: '#3498db',
     flex: 1,
-    marginLeft: 8,
+    marginLeft: 4,
   },
   clearButton: {
     backgroundColor: '#95a5a6',

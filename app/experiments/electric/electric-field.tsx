@@ -55,6 +55,28 @@ const ElectricFieldExperiment: React.FC = () => {
               'Where E is the electric field, F is the force, q is the test charge, Q is the source charge, and r is the distance.'
             )}
           </Text>
+
+          <Text style={styles.formulaTitle}>
+            {t('Elektrik Potansiyeli:', 'Electric Potential:')}
+          </Text>
+          <Text style={styles.formula}>V = k × Q / r</Text>
+          <Text style={styles.formulaDescription}>
+            {t(
+              'Burada V elektrik potansiyeli, k Coulomb sabiti, Q yük değeri ve r mesafedir.',
+              "Where V is the electric potential, k is Coulomb's constant, Q is the charge value, and r is the distance."
+            )}
+          </Text>
+
+          <Text style={styles.formulaTitle}>
+            {t('Potansiyel Enerji:', 'Potential Energy:')}
+          </Text>
+          <Text style={styles.formula}>U = k × (q₁ × q₂) / r</Text>
+          <Text style={styles.formulaDescription}>
+            {t(
+              'Burada U potansiyel enerji, k Coulomb sabiti, q₁ ve q₂ yük değerleri ve r aralarındaki mesafedir.',
+              "Where U is the potential energy, k is Coulomb's constant, q₁ and q₂ are the charge values, and r is the distance between them."
+            )}
+          </Text>
         </View>
 
         <View style={styles.instructionsSection}>
@@ -85,6 +107,60 @@ const ElectricFieldExperiment: React.FC = () => {
               '4. Change the charge value to examine the effects of charges with different magnitudes.'
             )}
           </Text>
+          <Text style={styles.instructionText}>
+            {t(
+              '5. Boş alana tıklayarak ölçüm noktası yerleştirin ve o konumdaki elektrik potansiyelini ölçün.',
+              '5. Click on an empty area to place a measurement point and measure the electric potential at that location.'
+            )}
+          </Text>
+          <Text style={styles.instructionText}>
+            {t(
+              '6. Yükler arasındaki etkileşimi ve potansiyel enerji değerlerini ölçüm panelinden takip edin.',
+              '6. Monitor the interaction between charges and potential energy values from the measurement panel.'
+            )}
+          </Text>
+        </View>
+
+        <View style={styles.featuresSection}>
+          <Text style={styles.sectionTitle}>
+            {t('Yeni Özellikler', 'New Features')}
+          </Text>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureTitle}>
+              {t('Potansiyel Enerji Ölçümü', 'Potential Energy Measurement')}
+            </Text>
+            <Text style={styles.featureText}>
+              {t(
+                'Yükler arasındaki potansiyel enerji değerlerini hesaplayarak görebilirsiniz. Aynı işaretli yükler arasında pozitif potansiyel enerji (itme), zıt işaretli yükler arasında negatif potansiyel enerji (çekme) gözlemleyebilirsiniz.',
+                'You can view the calculated potential energy values between charges. Observe positive potential energy (repulsion) between same-sign charges, and negative potential energy (attraction) between opposite-sign charges.'
+              )}
+            </Text>
+          </View>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureTitle}>
+              {t(
+                'Elektrik Potansiyeli Ölçümü',
+                'Electric Potential Measurement'
+              )}
+            </Text>
+            <Text style={styles.featureText}>
+              {t(
+                'Artık herhangi bir noktadaki elektrik potansiyelini ölçebilirsiniz. İstediğiniz noktaya tıklayarak o konumdaki toplam elektrik potansiyelini Volt cinsinden görebilirsiniz.',
+                'You can now measure the electric potential at any point. Simply click on any location to see the total electric potential at that point in Volts.'
+              )}
+            </Text>
+          </View>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureTitle}>
+              {t('İnteraktif Görselleştirme', 'Interactive Visualization')}
+            </Text>
+            <Text style={styles.featureText}>
+              {t(
+                'Yükler arasındaki etkileşim çizgileri, etkileşimin tipini (çekme veya itme) göstermek için renk kodlu olarak gösterilmektedir. Bu görselleştirme, elektrik alanını daha iyi anlamanıza yardımcı olur.',
+                'Interaction lines between charges are color-coded to indicate the type of interaction (attraction or repulsion). This visualization helps you better understand the electric field.'
+              )}
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -136,6 +212,17 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  featuresSection: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -174,6 +261,20 @@ const styles = StyleSheet.create({
     color: '#34495e',
     marginBottom: 8,
     lineHeight: 22,
+  },
+  featureItem: {
+    marginBottom: 16,
+  },
+  featureTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 6,
+  },
+  featureText: {
+    fontSize: 14,
+    color: '#34495e',
+    lineHeight: 20,
   },
 });
 

@@ -1,6 +1,12 @@
 // Constants
 export const GRAVITY = 9.81; // m/s²
 
+// Çarpışma modları
+export enum CollisionMode {
+  COLLISION = 'collision', // Normal çarpışma modu - momentum aktarımı, sekmeler
+  BULLET = 'bullet', // Mermi modu - mermi saplandığında kutunun içinde kalır
+}
+
 // Types
 export interface Vector {
   x: number;
@@ -34,6 +40,7 @@ export interface TargetBox {
   hardness?: number;
   thickness?: number;
   perforated?: boolean;
+  mode?: CollisionMode; // Eklenen yeni alan - çarpışma modu
 }
 
 export interface CollisionResult {
@@ -111,6 +118,9 @@ export const detectProjectileBoxCollision = (
     return { hasCollided: false };
   }
 
+  // Varsayılan mod belirleme
+  const collisionMode = box.mode || CollisionMode.BULLET;
+
   // Find the closest point on the box to the projectile center
   const closestX = Math.max(
     box.position.x,
@@ -131,6 +141,17 @@ export const detectProjectileBoxCollision = (
     return { hasCollided: false };
   }
 
+  // Eğer mermi zaten saplanmışsa, kutuyla birlikte hareket etsin
+  if (projectile.stuckInside && collisionMode === CollisionMode.BULLET) {
+    return {
+      hasCollided: true,
+      newVelocity1: box.velocity, // Mermi kutuyla aynı hızda hareket edecek
+      newVelocity2: box.velocity, // Kutu kendi hızında hareket edecek
+      collisionPoint: { x: closestX, y: closestY },
+      impulse: 0,
+    };
+  }
+
   // Collision detected - Calculate normal vector from box to projectile
   const collisionPoint = { x: closestX, y: closestY };
   let normal: Vector;
@@ -143,15 +164,26 @@ export const detectProjectileBoxCollision = (
     projectile.position.y <= box.position.y + box.height;
 
   if (isInside) {
-    // If the projectile is already marked as stuck inside, just keep it there
-    if (projectile.stuckInside) {
-      // Merminin kutuyla birlikte hareket etmesi için aynı hızı uygula
+    // BULLET modunda ve ilk kez kutuya girdiyse, stuckInside olarak işaretle
+    if (collisionMode === CollisionMode.BULLET && !projectile.stuckInside) {
+      (projectile as any).stuckInside = true;
+      (box as any).isFixed = false; // Kutu artık sabit değil
+
+      // Momentum korunumu prensibi
+      const totalMass = projectile.mass + box.mass;
+      const newVelocity = {
+        x: (projectile.mass * projectile.velocity.x) / totalMass,
+        y: (projectile.mass * projectile.velocity.y) / totalMass,
+      };
+
       return {
         hasCollided: true,
-        newVelocity1: box.velocity, // Mermi kutuyla aynı hızda hareket etmeli
-        newVelocity2: box.velocity, // Kutu kendi hızında hareket etmeli
+        newVelocity1: newVelocity, // Mermi kutuyla aynı hızda hareket edecek
+        newVelocity2: newVelocity, // Kutu da aynı hızda hareket edecek
         collisionPoint,
-        impulse: 0,
+        impulse: projectile.mass * magnitude(projectile.velocity),
+        penetration: 0,
+        boxPerforated: false,
       };
     }
 
@@ -189,7 +221,7 @@ export const detectProjectileBoxCollision = (
       const projectileMass = projectile.mass;
 
       // Higher speed and mass, and lower hardness means more penetration
-      const penetrationFactor = box.isFixed ? 0.5 : 0.1; // Sabit kutular için penetrasyon faktörünü artırdık (0.2 -> 0.5)
+      const penetrationFactor = box.isFixed ? 0.5 : 0.1;
       (projectile as any).penetration =
         ((speed * projectileMass) / boxHardness) * penetrationFactor;
 
@@ -225,26 +257,28 @@ export const detectProjectileBoxCollision = (
             boxPerforated,
           };
         } else {
-          // Kutuyu delecek gücü yoksa, içine saplanıyor
-          (projectile as any).stuckInside = true; // Mermi saplandı olarak işaretle
-          (box as any).isFixed = false; // Kutunun sabit olmadığını ayarla
+          // Kutuyu delecek gücü yoksa, içine saplanıyor (sadece BULLET modunda)
+          if (collisionMode === CollisionMode.BULLET) {
+            (projectile as any).stuckInside = true; // Mermi saplandı olarak işaretle
+            (box as any).isFixed = false; // Kutunun sabit olmadığını ayarla
 
-          // Momentum korunumu prensibi (p = mv)
-          const totalMass = projectile.mass + box.mass;
-          const finalVelocity = {
-            x: (projectile.mass * projectile.velocity.x) / totalMass,
-            y: (projectile.mass * projectile.velocity.y) / totalMass,
-          };
+            // Momentum korunumu prensibi (p = mv)
+            const totalMass = projectile.mass + box.mass;
+            const finalVelocity = {
+              x: (projectile.mass * projectile.velocity.x) / totalMass,
+              y: (projectile.mass * projectile.velocity.y) / totalMass,
+            };
 
-          return {
-            hasCollided: true,
-            newVelocity1: finalVelocity, // Mermi ve kutu aynı hızda hareket edecek
-            newVelocity2: finalVelocity, // v = p_total / m_total
-            collisionPoint,
-            impulse: projectile.mass * speed,
-            penetration: (projectile as any).penetration,
-            boxPerforated: false,
-          };
+            return {
+              hasCollided: true,
+              newVelocity1: finalVelocity, // Mermi ve kutu aynı hızda hareket edecek
+              newVelocity2: finalVelocity, // v = p_total / m_total
+              collisionPoint,
+              impulse: projectile.mass * speed,
+              penetration: (projectile as any).penetration,
+              boxPerforated: false,
+            };
+          }
         }
       }
 
@@ -252,8 +286,11 @@ export const detectProjectileBoxCollision = (
       const velocityReductionFactor = box.isFixed ? 0.7 : 0.8;
 
       if (!box.isFixed) {
-        // Mermi kutuya giriyor ve artık saplanıyor
-        (projectile as any).stuckInside = true;
+        // BULLET modunda, mermi kutuya giriyor ve saplanıyor
+        // COLLISION modunda, sadece momentum aktarılıyor
+        if (collisionMode === CollisionMode.BULLET) {
+          (projectile as any).stuckInside = true;
+        }
 
         // Momentum korunumu prensibi (p1 + p2 = (m1 + m2)v_son)
         const totalMass = projectile.mass + box.mass;
@@ -268,6 +305,32 @@ export const detectProjectileBoxCollision = (
             totalMass,
         };
 
+        if (collisionMode === CollisionMode.COLLISION) {
+          // Çarpışma modunda, mermi ve kutu ayrılır
+          const bounceDirection = normalize({
+            x: -normal.x,
+            y: -normal.y,
+          });
+
+          const restitution = Math.min(projectile.elasticity, box.elasticity);
+          const bounceSpeed = magnitude(projectile.velocity) * restitution;
+
+          const newProjectileVelocity = {
+            x: bounceDirection.x * bounceSpeed,
+            y: bounceDirection.y * bounceSpeed,
+          };
+
+          return {
+            hasCollided: true,
+            newVelocity1: newProjectileVelocity, // Mermi geri sekiyor
+            newVelocity2: finalVelocity, // Kutu momentum kazanıyor
+            collisionPoint,
+            impulse: projectile.mass * magnitude(projectile.velocity),
+            penetration: 0,
+            boxPerforated: false,
+          };
+        }
+
         return {
           hasCollided: true,
           newVelocity1: finalVelocity,
@@ -279,28 +342,55 @@ export const detectProjectileBoxCollision = (
         };
       }
 
-      // Sabit kutuya girmeye çalışıyor, saplamayı işaretle
-      (projectile as any).stuckInside = true;
+      // Sabit kutuya girmeye çalışıyor
+      // BULLET modunda, saplanma işaretle
+      if (collisionMode === CollisionMode.BULLET) {
+        (projectile as any).stuckInside = true;
 
-      // Sabit kutuya çarptığında momentum aktarımı yapmalı ve kutu hareket etmeli
-      (box as any).isFixed = false; // Kutu artık sabit değil
+        // Sabit kutuya çarptığında momentum aktarımı yapmalı ve kutu hareket etmeli
+        (box as any).isFixed = false; // Kutu artık sabit değil
 
-      // Momentum korunumu prensibi
-      const totalMass = projectile.mass + box.mass;
-      const finalVelocity = {
-        x: (projectile.mass * projectile.velocity.x) / totalMass,
-        y: (projectile.mass * projectile.velocity.y) / totalMass,
-      };
+        // Momentum korunumu prensibi
+        const totalMass = projectile.mass + box.mass;
+        const finalVelocity = {
+          x: (projectile.mass * projectile.velocity.x) / totalMass,
+          y: (projectile.mass * projectile.velocity.y) / totalMass,
+        };
 
-      return {
-        hasCollided: true,
-        newVelocity1: finalVelocity, // Mermi ve kutu aynı hızda hareket edecek
-        newVelocity2: finalVelocity, // Kutu artık hareket edebilir
-        collisionPoint,
-        impulse: projectile.mass * speed,
-        penetration: (projectile as any).penetration,
-        boxPerforated,
-      };
+        return {
+          hasCollided: true,
+          newVelocity1: finalVelocity, // Mermi ve kutu aynı hızda hareket edecek
+          newVelocity2: finalVelocity, // Kutu artık hareket edebilir
+          collisionPoint,
+          impulse: projectile.mass * speed,
+          penetration: (projectile as any).penetration,
+          boxPerforated,
+        };
+      } else {
+        // COLLISION modunda, mermi geri sekiyor
+        const bounceDirection = normalize({
+          x: -normal.x,
+          y: -normal.y,
+        });
+
+        const restitution = Math.min(projectile.elasticity, box.elasticity);
+        const bounceSpeed = magnitude(projectile.velocity) * restitution;
+
+        const newProjectileVelocity = {
+          x: bounceDirection.x * bounceSpeed,
+          y: bounceDirection.y * bounceSpeed,
+        };
+
+        return {
+          hasCollided: true,
+          newVelocity1: newProjectileVelocity,
+          newVelocity2: box.velocity,
+          collisionPoint,
+          impulse: projectile.mass * magnitude(projectile.velocity),
+          penetration: 0,
+          boxPerforated: false,
+        };
+      }
     } else {
       // Projectile is already inside, continue reducing its penetration and velocity
       const penetrationDecrement = box.isFixed && !box.perforated ? 0.05 : 0.1;
@@ -313,7 +403,10 @@ export const detectProjectileBoxCollision = (
       if ((projectile as any).penetration <= 0) {
         // For perforated boxes or non-fixed boxes, apply momentum conservation
         if (box.perforated || !box.isFixed) {
-          (projectile as any).stuckInside = true;
+          // BULLET modunda saplanma gerçekleşir
+          if (collisionMode === CollisionMode.BULLET) {
+            (projectile as any).stuckInside = true;
+          }
 
           // Momentum korunumu prensibi
           const totalMass = projectile.mass + box.mass;
@@ -328,7 +421,33 @@ export const detectProjectileBoxCollision = (
               totalMass,
           };
 
-          // Hem mermiye hem kutuya aynı hızı veriyoruz
+          // COLLISION modunda, mermi ve kutu ayrılıyor
+          if (collisionMode === CollisionMode.COLLISION) {
+            const bounceDirection = normalize({
+              x: -normal.x,
+              y: -normal.y,
+            });
+
+            const restitution = Math.min(projectile.elasticity, box.elasticity);
+            const bounceSpeed = magnitude(projectile.velocity) * restitution;
+
+            const newProjectileVelocity = {
+              x: bounceDirection.x * bounceSpeed,
+              y: bounceDirection.y * bounceSpeed,
+            };
+
+            return {
+              hasCollided: true,
+              newVelocity1: newProjectileVelocity, // Mermi geri sekiyor
+              newVelocity2: finalVelocity, // Kutu momentum kazanıyor
+              collisionPoint,
+              impulse: projectile.mass * magnitude(projectile.velocity),
+              penetration: 0,
+              boxPerforated: box.perforated,
+            };
+          }
+
+          // Hem mermiye hem kutuya aynı hızı veriyoruz (BULLET modu)
           return {
             hasCollided: true,
             newVelocity1: finalVelocity,
@@ -339,29 +458,57 @@ export const detectProjectileBoxCollision = (
           };
         } else {
           // Sabit kutuya saplandı - kutunun isFixed özelliğini değiştirerek harekete izin ver
-          (projectile as any).stuckInside = true;
-          (box as any).isFixed = false; // Kutu artık sabit değil
+          if (collisionMode === CollisionMode.BULLET) {
+            (projectile as any).stuckInside = true;
+            (box as any).isFixed = false; // Kutu artık sabit değil
 
-          // Momentum korunumu prensibi
-          const totalMass = projectile.mass + box.mass;
-          const finalVelocity = {
-            x: (projectile.mass * projectile.velocity.x) / totalMass,
-            y: (projectile.mass * projectile.velocity.y) / totalMass,
-          };
+            // Momentum korunumu prensibi
+            const totalMass = projectile.mass + box.mass;
+            const finalVelocity = {
+              x: (projectile.mass * projectile.velocity.x) / totalMass,
+              y: (projectile.mass * projectile.velocity.y) / totalMass,
+            };
 
-          return {
-            hasCollided: true,
-            newVelocity1: finalVelocity, // Mermi ve kutu aynı hızda hareket edecek
-            newVelocity2: finalVelocity, // Kutu artık hareket edebilir
-            collisionPoint,
-            impulse: projectile.mass * magnitude(projectile.velocity),
-            boxPerforated: false,
-          };
+            return {
+              hasCollided: true,
+              newVelocity1: finalVelocity, // Mermi ve kutu aynı hızda hareket edecek
+              newVelocity2: finalVelocity, // Kutu artık hareket edebilir
+              collisionPoint,
+              impulse: projectile.mass * magnitude(projectile.velocity),
+              boxPerforated: false,
+            };
+          } else {
+            // COLLISION modunda, mermi geri sekiyor
+            const bounceDirection = normalize({
+              x: -normal.x,
+              y: -normal.y,
+            });
+
+            const restitution = Math.min(projectile.elasticity, box.elasticity);
+            const bounceSpeed = magnitude(projectile.velocity) * restitution;
+
+            const newProjectileVelocity = {
+              x: bounceDirection.x * bounceSpeed,
+              y: bounceDirection.y * bounceSpeed,
+            };
+
+            return {
+              hasCollided: true,
+              newVelocity1: newProjectileVelocity,
+              newVelocity2: box.velocity,
+              collisionPoint,
+              impulse: projectile.mass * magnitude(projectile.velocity),
+              penetration: 0,
+              boxPerforated: false,
+            };
+          }
         }
       }
 
-      // Mermi kutuya saplanmış durumda, birlikte hareket etsinler
-      (projectile as any).stuckInside = true;
+      // BULLET modunda, mermi kutuya saplanmış durumda
+      if (collisionMode === CollisionMode.BULLET) {
+        (projectile as any).stuckInside = true;
+      }
 
       // Continue with momentum conservation while inside
       if (!box.isFixed) {
@@ -377,6 +524,32 @@ export const detectProjectileBoxCollision = (
             totalMass,
         };
 
+        // COLLISION modunda, mermi ve kutu ayrılıyor
+        if (collisionMode === CollisionMode.COLLISION) {
+          const bounceDirection = normalize({
+            x: -normal.x,
+            y: -normal.y,
+          });
+
+          const restitution = Math.min(projectile.elasticity, box.elasticity);
+          const bounceSpeed =
+            magnitude(projectile.velocity) * restitution * 0.5;
+
+          const newProjectileVelocity = {
+            x: bounceDirection.x * bounceSpeed,
+            y: bounceDirection.y * bounceSpeed,
+          };
+
+          return {
+            hasCollided: true,
+            newVelocity1: newProjectileVelocity, // Mermi geri sekiyor
+            newVelocity2: finalVelocity, // Kutu momentum kazanıyor
+            collisionPoint,
+            impulse: projectile.mass * magnitude(projectile.velocity) * 0.1,
+            boxPerforated: false,
+          };
+        }
+
         return {
           hasCollided: true,
           newVelocity1: finalVelocity,
@@ -388,23 +561,49 @@ export const detectProjectileBoxCollision = (
       }
 
       // Sabit durumdaki kutuyu hareket ettirmek için isFixed özelliğini değiştir
-      (box as any).isFixed = false;
+      if (collisionMode === CollisionMode.BULLET) {
+        (box as any).isFixed = false;
 
-      // Momentum hesapla
-      const totalMass = projectile.mass + box.mass;
-      const finalVelocity = {
-        x: (projectile.mass * projectile.velocity.x) / totalMass,
-        y: (projectile.mass * projectile.velocity.y) / totalMass,
-      };
+        // Momentum hesapla
+        const totalMass = projectile.mass + box.mass;
+        const finalVelocity = {
+          x: (projectile.mass * projectile.velocity.x) / totalMass,
+          y: (projectile.mass * projectile.velocity.y) / totalMass,
+        };
 
-      return {
-        hasCollided: true,
-        newVelocity1: finalVelocity,
-        newVelocity2: finalVelocity,
-        collisionPoint,
-        impulse: projectile.mass * magnitude(projectile.velocity) * 0.1,
-        boxPerforated: false,
-      };
+        return {
+          hasCollided: true,
+          newVelocity1: finalVelocity,
+          newVelocity2: finalVelocity,
+          collisionPoint,
+          impulse: projectile.mass * magnitude(projectile.velocity) * 0.1,
+          boxPerforated: false,
+        };
+      } else {
+        // COLLISION modunda, mermi geri sekiyor
+        const bounceDirection = normalize({
+          x: -normal.x,
+          y: -normal.y,
+        });
+
+        const restitution = Math.min(projectile.elasticity, box.elasticity);
+        const bounceSpeed = magnitude(projectile.velocity) * restitution * 0.5;
+
+        const newProjectileVelocity = {
+          x: bounceDirection.x * bounceSpeed,
+          y: bounceDirection.y * bounceSpeed,
+        };
+
+        return {
+          hasCollided: true,
+          newVelocity1: newProjectileVelocity,
+          newVelocity2: box.velocity,
+          collisionPoint,
+          impulse: projectile.mass * magnitude(projectile.velocity) * 0.1,
+          penetration: 0,
+          boxPerforated: false,
+        };
+      }
     }
   } else {
     // Normal from collision point to circle center

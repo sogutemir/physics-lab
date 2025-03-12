@@ -8,6 +8,7 @@ import {
   detectProjectileBoxCollision,
   addVectors,
   multiplyVector,
+  CollisionMode,
 } from './physics';
 
 interface SimulationOptions {
@@ -31,6 +32,7 @@ export function useSimulation(options: SimulationOptions) {
     hardness: 8,
     thickness: 5,
     perforated: false,
+    mode: CollisionMode.BULLET,
   });
   const [isRunning, setIsRunning] = useState(false);
   const [timeScale, setTimeScale] = useState(options.timeScale);
@@ -150,6 +152,10 @@ export function useSimulation(options: SimulationOptions) {
     }));
   }, []);
 
+  const setCollisionMode = useCallback((mode: CollisionMode) => {
+    setTargetBox((prev) => ({ ...prev, mode }));
+  }, []);
+
   useEffect(() => {
     if (!isRunning) return;
 
@@ -175,6 +181,50 @@ export function useSimulation(options: SimulationOptions) {
 
       const scaledDelta = deltaTime * timeScale;
 
+      // Kutunun pozisyonunu güncelle, sonra mermileri güncelle
+      // Önce kutu pozisyonunu güncelleyelim
+      let boxPositionUpdated = false;
+      let newBoxPosition = { ...targetBox.position };
+
+      if (!targetBox.isFixed) {
+        if (targetBox.velocity.x !== 0 || targetBox.velocity.y !== 0) {
+          newBoxPosition = addVectors(
+            targetBox.position,
+            multiplyVector(targetBox.velocity, scaledDelta)
+          );
+
+          // Duvar çarpışma kontrolü
+          if (newBoxPosition.x < 0) {
+            newBoxPosition.x = 0;
+            targetBox.velocity.x = -targetBox.velocity.x * wallElasticity;
+          } else if (
+            newBoxPosition.x + targetBox.width >
+            canvasWidthRef.current
+          ) {
+            newBoxPosition.x = canvasWidthRef.current - targetBox.width;
+            targetBox.velocity.x = -targetBox.velocity.x * wallElasticity;
+          }
+
+          if (newBoxPosition.y < 0) {
+            newBoxPosition.y = 0;
+            targetBox.velocity.y = -targetBox.velocity.y * wallElasticity;
+          } else if (
+            newBoxPosition.y + targetBox.height >
+            canvasHeightRef.current
+          ) {
+            newBoxPosition.y = canvasHeightRef.current - targetBox.height;
+            targetBox.velocity.y = -targetBox.velocity.y * wallElasticity;
+          }
+
+          boxPositionUpdated = true;
+          setTargetBox((prevBox) => ({
+            ...prevBox,
+            position: newBoxPosition,
+          }));
+        }
+      }
+
+      // Şimdi mermileri güncelle
       setProjectiles((prevProjectiles) => {
         const updatedProjectiles = [...prevProjectiles];
         let hasChanges = false;
@@ -182,11 +232,31 @@ export function useSimulation(options: SimulationOptions) {
         // Toplu güncelleme için tüm hesaplamaları yap
         for (let i = 0; i < updatedProjectiles.length; i++) {
           const p = updatedProjectiles[i];
+
+          // Eğer mermi kutuya saplanmışsa, kutunun hareketiyle birlikte güncelle
+          if (p.stuckInside) {
+            if (boxPositionUpdated) {
+              // Merminin kutuya göre bağıl pozisyonunu hesapla (kutu ile arasındaki fark)
+              const offsetX = p.position.x - targetBox.position.x;
+              const offsetY = p.position.y - targetBox.position.y;
+
+              // Bağıl pozisyonu koruyarak merminin yeni pozisyonunu güncelle
+              p.position = {
+                x: newBoxPosition.x + offsetX,
+                y: newBoxPosition.y + offsetY,
+              };
+
+              // Merminin hızını kutuyla aynı yap
+              p.velocity = { ...targetBox.velocity };
+              hasChanges = true;
+            }
+            continue; // Saplanmış mermilerin fizik hesaplaması yapmıyoruz
+          }
+
           if (
-            p.stuckInside ||
-            (p.penetration !== undefined &&
-              p.penetration <= 0 &&
-              !targetBox.perforated)
+            p.penetration !== undefined &&
+            p.penetration <= 0 &&
+            !targetBox.perforated
           ) {
             continue;
           }
@@ -229,6 +299,11 @@ export function useSimulation(options: SimulationOptions) {
             hasCollisionChanges = true;
             if (collision.newVelocity1) {
               projectile.velocity = collision.newVelocity1;
+            }
+
+            // Mermi modunda, çarpışma sonrası mermi saplanmış olarak işaretlenir
+            if (targetBox.mode === CollisionMode.BULLET) {
+              projectile.stuckInside = true;
             }
 
             if (collision.penetration !== undefined) {
@@ -326,5 +401,6 @@ export function useSimulation(options: SimulationOptions) {
     startSimulation,
     pauseSimulation,
     resetSimulation,
+    setCollisionMode,
   };
 }

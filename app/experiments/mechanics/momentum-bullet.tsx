@@ -15,6 +15,7 @@ import ControlPanel from './components/momentum-bullet/ControlPanel';
 import ProjectileSettings from './components/momentum-bullet/ProjectileSettings';
 import { useSimulation } from './utils/momentum-bullet/useSimulation';
 import { useLanguage } from '../../../components/LanguageContext';
+import { CollisionMode } from './utils/momentum-bullet/physics';
 
 const MomentumBulletExperiment = () => {
   const { t } = useLanguage();
@@ -74,8 +75,10 @@ const MomentumBulletExperiment = () => {
               timeScale={simulation.timeScale}
               wallElasticity={simulation.wallElasticity}
               projectilesCount={simulation.projectiles.length}
+              collisionMode={simulation.targetBox.mode || CollisionMode.BULLET}
               onTimeScaleChange={simulation.setTimeScale}
               onWallElasticityChange={simulation.setWallElasticity}
+              onModeChange={simulation.setCollisionMode}
               onStart={simulation.startSimulation}
               onPause={simulation.pauseSimulation}
               onReset={simulation.resetSimulation}

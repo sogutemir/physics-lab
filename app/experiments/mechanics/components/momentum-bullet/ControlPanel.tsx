@@ -9,14 +9,17 @@ import {
 import Slider from '@react-native-community/slider';
 import { useLanguage } from '../../../../../components/LanguageContext';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
+import { CollisionMode } from '../../utils/momentum-bullet/physics';
 
 interface ControlPanelProps {
   isRunning: boolean;
   timeScale: number;
   wallElasticity: number;
   projectilesCount: number;
+  collisionMode: CollisionMode;
   onTimeScaleChange: (value: number) => void;
   onWallElasticityChange: (value: number) => void;
+  onModeChange: (mode: CollisionMode) => void;
   onStart: () => void;
   onPause: () => void;
   onReset: () => void;
@@ -28,8 +31,10 @@ const ControlPanel = ({
   timeScale,
   wallElasticity,
   projectilesCount,
+  collisionMode,
   onTimeScaleChange,
   onWallElasticityChange,
+  onModeChange,
   onStart,
   onPause,
   onReset,
@@ -77,6 +82,62 @@ const ControlPanel = ({
           maximumTrackTintColor="#d1d5db"
           thumbTintColor="#3b82f6"
         />
+      </View>
+
+      <View style={styles.separator} />
+
+      <View style={styles.modeSelector}>
+        <Text style={styles.modeTitle}>
+          {t('Çarpışma Modu', 'Collision Mode')}:
+        </Text>
+        <View style={styles.modeButtons}>
+          <TouchableOpacity
+            style={[
+              styles.modeButton,
+              collisionMode === CollisionMode.BULLET && styles.activeMode,
+            ]}
+            onPress={() => onModeChange(CollisionMode.BULLET)}
+            disabled={isRunning}
+          >
+            <Text
+              style={[
+                styles.modeButtonText,
+                collisionMode === CollisionMode.BULLET && styles.activeModeText,
+              ]}
+            >
+              {t('Mermi Modu', 'Bullet Mode')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.modeButton,
+              collisionMode === CollisionMode.COLLISION && styles.activeMode,
+            ]}
+            onPress={() => onModeChange(CollisionMode.COLLISION)}
+            disabled={isRunning}
+          >
+            <Text
+              style={[
+                styles.modeButtonText,
+                collisionMode === CollisionMode.COLLISION &&
+                  styles.activeModeText,
+              ]}
+            >
+              {t('Çarpışma Modu', 'Collision Mode')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.modeDescription}>
+          {collisionMode === CollisionMode.BULLET
+            ? t(
+                'Mermi hedefin içine saplanır ve birlikte hareket ederler',
+                'Projectile embeds in target and they move together'
+              )
+            : t(
+                'Mermi hedeften sekip momentum aktarır',
+                'Projectile bounces off target and transfers momentum'
+              )}
+        </Text>
       </View>
 
       <View style={styles.separator} />
@@ -256,6 +317,49 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
+  },
+  modeSelector: {
+    marginBottom: 16,
+  },
+  modeTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#4b5563',
+    marginBottom: 8,
+  },
+  modeButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  modeButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 4,
+  },
+  activeMode: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#3b82f6',
+  },
+  modeButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#4b5563',
+  },
+  activeModeText: {
+    color: 'white',
+  },
+  modeDescription: {
+    fontSize: 12,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginTop: 4,
   },
 });
 

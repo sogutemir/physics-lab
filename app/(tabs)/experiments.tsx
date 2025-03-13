@@ -42,7 +42,8 @@ type ExperimentRoute =
   | '/experiments/basics/relative-motion'
   | '/experiments/basics/coriolis-effect'
   | '/experiments/basics/buoyancy'
-  | '/experiments/basics/pressure';
+  | '/experiments/basics/pressure'
+  | '/experiments/electric/magnetic-field';
 
 interface Experiment {
   id: string;
@@ -360,6 +361,19 @@ const experiments: Experiment[] = [
     descriptionEn:
       'In this experiment, explore the relationship between resistance, inductance, and capacitance. Observe the behavior of the circuit by changing different parameters and find the resonance frequency.',
     route: '/experiments/electric/rc-circuit' as any,
+  },
+  {
+    id: '28',
+    title: 'Manyetik Alan',
+    titleEn: 'Magnetic Field',
+    category: 'electricity',
+    difficulty: 'Orta Seviye',
+    difficultyEn: 'Intermediate',
+    description:
+      'Manyetik alanın özelliklerini ve etkilerini interaktif olarak keşfedin. Farklı manyetik alan kaynakları ile deneyler yapın ve manyetik alan çizgilerini gözlemleyin.',
+    descriptionEn:
+      'Interactively explore the properties and effects of magnetic fields. Experiment with different magnetic field sources and observe magnetic field lines.',
+    route: '/experiments/electric/magnetic-field' as any,
   },
 ];
 

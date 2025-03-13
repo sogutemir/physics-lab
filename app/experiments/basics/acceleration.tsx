@@ -6,6 +6,9 @@ import Animated, {
   withTiming,
   Easing,
   withSpring,
+  withRepeat,
+  cancelAnimation,
+  runOnJS,
 } from 'react-native-reanimated';
 import { useLanguage } from '../../../components/LanguageContext';
 import ControlPanel from './components/ControlPanel';
@@ -76,7 +79,7 @@ const AccelerationExperiment: React.FC = () => {
     }
 
     const elapsedTime = (now - startTime.value) / 1000;
-    const deltaTime = (now - lastFrameTime.value) / 1000;
+    const deltaTime = Math.min((now - lastFrameTime.value) / 1000, 0.1); // Limit delta time
     lastFrameTime.value = now;
 
     if (elapsedTime <= time) {
@@ -90,8 +93,10 @@ const AccelerationExperiment: React.FC = () => {
       // Animasyon pozisyonunu güncelle (ekran genişliğine göre ölçeklendir)
       const screenPosition =
         (normalizedPosition / TRACK_LENGTH) * (screenWidth - 60);
+
+      // Daha akıcı animasyon için config
       animatedPosition.value = withTiming(screenPosition, {
-        duration: deltaTime * 1000,
+        duration: 16, // 60 FPS'e yakın
         easing: Easing.linear,
       });
 
@@ -122,19 +127,15 @@ const AccelerationExperiment: React.FC = () => {
   ]);
 
   useEffect(() => {
-    let animationFrame: number;
+    let intervalId: NodeJS.Timeout;
 
     if (isRunning) {
-      const animate = () => {
-        frameCallback();
-        animationFrame = requestAnimationFrame(animate);
-      };
-      animationFrame = requestAnimationFrame(animate);
+      intervalId = setInterval(frameCallback, 16); // 60 FPS'e yakın
     }
 
     return () => {
-      if (animationFrame) {
-        cancelAnimationFrame(animationFrame);
+      if (intervalId) {
+        clearInterval(intervalId);
       }
     };
   }, [isRunning, frameCallback]);
@@ -151,7 +152,7 @@ const AccelerationExperiment: React.FC = () => {
       setLapCount(0);
       setTotalDistance(0);
       setLastLapTime(0);
-      animatedPosition.value = withSpring(0);
+      animatedPosition.value = 0;
       setIsRunning(true);
     }
   };
@@ -166,12 +167,15 @@ const AccelerationExperiment: React.FC = () => {
     setLapCount(0);
     setTotalDistance(0);
     setLastLapTime(0);
-    animatedPosition.value = withSpring(0);
+    animatedPosition.value = 0;
   };
 
-  const objectStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: animatedPosition.value }],
-  }));
+  const objectStyle = useAnimatedStyle(
+    () => ({
+      transform: [{ translateX: animatedPosition.value }],
+    }),
+    []
+  );
 
   return (
     <ScrollView style={styles.container}>

@@ -29,6 +29,8 @@ import {
   Magnet,
   Eye,
   EyeOff,
+  Plus,
+  Minus,
 } from 'lucide-react-native';
 import { FieldType, MagneticSimulatorProps } from './types';
 
@@ -42,6 +44,7 @@ const MagneticSimulator: React.FC<MagneticSimulatorProps> = ({
   onChangeFieldType,
   onToggleAnimation,
   onToggleFieldLines,
+  onCoilTurnsChange,
 }) => {
   const { language, t } = useLanguage();
   const [screenWidth, setScreenWidth] = useState(
@@ -68,6 +71,8 @@ const MagneticSimulator: React.FC<MagneticSimulatorProps> = ({
   }, []);
 
   useEffect(() => {
+    let animationInterval: NodeJS.Timeout;
+
     if (animateField) {
       const animation = Animated.loop(
         Animated.timing(animatedValue, {
@@ -78,13 +83,13 @@ const MagneticSimulator: React.FC<MagneticSimulatorProps> = ({
       );
       animation.start();
 
-      const interval = setInterval(() => {
+      animationInterval = setInterval(() => {
         setAnimationPhase((prev) => (prev + 0.02) % 1);
       }, 50);
 
       return () => {
         animation.stop();
-        clearInterval(interval);
+        clearInterval(animationInterval);
       };
     } else {
       animatedValue.setValue(0);
@@ -452,6 +457,24 @@ const MagneticSimulator: React.FC<MagneticSimulatorProps> = ({
               : t('Alan Çizgilerini Göster', 'Show Field Lines')}
           </Text>
         </TouchableOpacity>
+
+        {fieldType === 'coil' && (
+          <View style={styles.coilControls}>
+            <TouchableOpacity
+              style={styles.coilButton}
+              onPress={() => onCoilTurnsChange(Math.max(1, coilTurns - 1))}
+            >
+              <Minus size={16} color="#666" />
+            </TouchableOpacity>
+            <Text style={styles.coilTurnsText}>{coilTurns}</Text>
+            <TouchableOpacity
+              style={styles.coilButton}
+              onPress={() => onCoilTurnsChange(Math.min(20, coilTurns + 1))}
+            >
+              <Plus size={16} color="#666" />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -504,6 +527,7 @@ const styles = StyleSheet.create({
   controlsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    alignItems: 'center',
     padding: 16,
     borderTopWidth: 1,
     borderColor: '#e5e7eb',
@@ -519,6 +543,24 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 14,
     color: '#4b5563',
+  },
+  coilControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    padding: 4,
+  },
+  coilButton: {
+    padding: 8,
+    borderRadius: 4,
+    backgroundColor: '#fff',
+  },
+  coilTurnsText: {
+    marginHorizontal: 12,
+    fontSize: 14,
+    color: '#4b5563',
+    fontWeight: '500',
   },
 });
 

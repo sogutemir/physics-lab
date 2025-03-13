@@ -5,7 +5,7 @@ import ParameterControls from './ParameterControls';
 import { useLanguage } from '../../../../../components/LanguageContext';
 import { FieldType } from './types';
 
-const MagneticFieldExperiment = () => {
+const MagneticFieldExperiment: React.FC = () => {
   const { language, t } = useLanguage();
   const isEnglish = language === 'en';
 
@@ -18,35 +18,37 @@ const MagneticFieldExperiment = () => {
   const [showFieldLines, setShowFieldLines] = useState(true);
 
   // Durum güncelleme işlevleri
-  const updateCurrentIntensity = (value: number) => {
+  const handleCurrentIntensityChange = (value: number) => {
     setCurrentIntensity(value);
   };
 
-  const updateWireDistance = (value: number) => {
+  const handleWireDistanceChange = (value: number) => {
     setWireDistance(value);
   };
 
-  const updateCoilTurns = (value: number) => {
+  const handleCoilTurnsChange = (value: number) => {
     setCoilTurns(value);
   };
 
-  const toggleAnimation = () => {
-    setAnimateField(!animateField);
-  };
-
-  const toggleFieldLines = () => {
-    setShowFieldLines(!showFieldLines);
-  };
-
-  const changeFieldType = (type: FieldType) => {
+  const handleFieldTypeChange = (type: FieldType) => {
     setFieldType(type);
   };
 
-  const resetParameters = () => {
+  const handleToggleAnimation = () => {
+    setAnimateField(!animateField);
+  };
+
+  const handleToggleFieldLines = () => {
+    setShowFieldLines(!showFieldLines);
+  };
+
+  const handleReset = () => {
     setCurrentIntensity(5);
     setWireDistance(30);
     setCoilTurns(10);
+    setFieldType('straight');
     setAnimateField(false);
+    setShowFieldLines(true);
   };
 
   return (
@@ -58,9 +60,10 @@ const MagneticFieldExperiment = () => {
         fieldType={fieldType}
         showFieldLines={showFieldLines}
         animateField={animateField}
-        onChangeFieldType={changeFieldType}
-        onToggleAnimation={toggleAnimation}
-        onToggleFieldLines={toggleFieldLines}
+        onChangeFieldType={handleFieldTypeChange}
+        onToggleAnimation={handleToggleAnimation}
+        onToggleFieldLines={handleToggleFieldLines}
+        onCoilTurnsChange={handleCoilTurnsChange}
       />
       <ParameterControls
         title={t('Manyetik Alan Parametreleri', 'Magnetic Field Parameters')}
@@ -68,11 +71,11 @@ const MagneticFieldExperiment = () => {
         wireDistance={wireDistance}
         coilTurns={coilTurns}
         fieldType={fieldType}
-        onUpdateCurrentIntensity={updateCurrentIntensity}
-        onUpdateWireDistance={updateWireDistance}
-        onUpdateCoilTurns={updateCoilTurns}
-        onResetParameters={resetParameters}
-        onChangeFieldType={changeFieldType}
+        onCurrentIntensityChange={handleCurrentIntensityChange}
+        onWireDistanceChange={handleWireDistanceChange}
+        onCoilTurnsChange={handleCoilTurnsChange}
+        onFieldTypeChange={handleFieldTypeChange}
+        onReset={handleReset}
       />
     </View>
   );
@@ -81,8 +84,8 @@ const MagneticFieldExperiment = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f3f4f6',
     padding: 16,
-    backgroundColor: '#f5f5f5',
   },
 });
 

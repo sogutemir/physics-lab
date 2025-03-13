@@ -10,6 +10,7 @@ export interface MagneticSimulatorProps {
   onChangeFieldType: (type: FieldType) => void;
   onToggleAnimation: () => void;
   onToggleFieldLines: () => void;
+  onCoilTurnsChange: (turns: number) => void;
 }
 
 export interface ParameterControlsProps {
@@ -18,9 +19,9 @@ export interface ParameterControlsProps {
   wireDistance: number;
   coilTurns: number;
   fieldType: FieldType;
-  onUpdateCurrentIntensity: (value: number) => void;
-  onUpdateWireDistance: (value: number) => void;
-  onUpdateCoilTurns: (value: number) => void;
-  onResetParameters: () => void;
-  onChangeFieldType: (type: FieldType) => void;
+  onCurrentIntensityChange: (value: number) => void;
+  onWireDistanceChange: (value: number) => void;
+  onCoilTurnsChange: (value: number) => void;
+  onFieldTypeChange: (type: FieldType) => void;
+  onReset: () => void;
 }

@@ -21,7 +21,7 @@ import {
 } from 'lucide-react-native';
 import Slider from '@react-native-community/slider';
 import { useLanguage } from '../../../../../components/LanguageContext';
-import { ParameterControlsProps, FieldType } from './types';
+import { FieldType, ParameterControlsProps } from './types';
 
 const ParameterControls: React.FC<ParameterControlsProps> = ({
   title,
@@ -29,11 +29,11 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
   wireDistance,
   coilTurns,
   fieldType,
-  onUpdateCurrentIntensity,
-  onUpdateWireDistance,
-  onUpdateCoilTurns,
-  onResetParameters,
-  onChangeFieldType,
+  onCurrentIntensityChange,
+  onWireDistanceChange,
+  onCoilTurnsChange,
+  onFieldTypeChange,
+  onReset,
 }) => {
   const { language, t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(true);
@@ -46,17 +46,17 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
   };
 
   const handleCurrentChange = (value: number) => {
-    onUpdateCurrentIntensity(value);
+    onCurrentIntensityChange(value);
     setCurrentText(value.toString());
   };
 
   const handleDistanceChange = (value: number) => {
-    onUpdateWireDistance(value);
+    onWireDistanceChange(value);
     setDistanceText(value.toString());
   };
 
   const handleCoilTurnsChange = (value: number) => {
-    onUpdateCoilTurns(value);
+    onCoilTurnsChange(value);
     setCoilTurnsText(value.toString());
   };
 
@@ -64,7 +64,7 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
     setCurrentText(text);
     const parsed = parseFloat(text);
     if (!isNaN(parsed) && parsed >= 0 && parsed <= 10) {
-      onUpdateCurrentIntensity(parsed);
+      onCurrentIntensityChange(parsed);
     }
   };
 
@@ -72,7 +72,7 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
     setDistanceText(text);
     const parsed = parseFloat(text);
     if (!isNaN(parsed) && parsed >= 10 && parsed <= 50) {
-      onUpdateWireDistance(parsed);
+      onWireDistanceChange(parsed);
     }
   };
 
@@ -80,7 +80,7 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
     setCoilTurnsText(text);
     const parsed = parseInt(text, 10);
     if (!isNaN(parsed) && parsed >= 1 && parsed <= 20) {
-      onUpdateCoilTurns(parsed);
+      onCoilTurnsChange(parsed);
     }
   };
 
@@ -111,48 +111,57 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
 
       {isExpanded && (
         <View style={styles.content}>
-          <View style={styles.controlGroup}>
-            <View style={styles.labelRow}>
-              <Text style={styles.parameterLabel}>
-                {t('Akım Şiddeti', 'Current Intensity')}:
-              </Text>
-              <TextInput
-                style={styles.valueInput}
-                value={currentText}
-                onChangeText={handleCurrentTextChange}
-                keyboardType="numeric"
-                maxLength={5}
+          <View style={styles.section}>
+            <Text style={styles.label}>
+              {t('Akım Şiddeti', 'Current Intensity')}
+            </Text>
+            <View style={styles.sliderContainer}>
+              <Slider
+                style={styles.slider}
+                minimumValue={0}
+                maximumValue={10}
+                step={0.1}
+                value={currentIntensity}
+                onValueChange={handleCurrentChange}
+                minimumTrackTintColor="#3b82f6"
+                maximumTrackTintColor="#e5e7eb"
               />
-              <Text style={styles.unit}>A</Text>
+              <Text style={styles.value}>{currentIntensity.toFixed(1)} A</Text>
             </View>
-            <Slider
-              style={styles.slider}
-              minimumValue={0}
-              maximumValue={10}
-              step={0.1}
-              value={currentIntensity}
-              onValueChange={handleCurrentChange}
-              minimumTrackTintColor="#3b82f6"
-              maximumTrackTintColor="#e5e7eb"
-              thumbTintColor="#3b82f6"
-            />
           </View>
 
-          {fieldType === 'straight' && (
-            <View style={styles.controlGroup}>
-              <View style={styles.labelRow}>
-                <Text style={styles.parameterLabel}>
-                  {t('Telden Uzaklık', 'Distance from Wire')}:
-                </Text>
-                <TextInput
-                  style={styles.valueInput}
-                  value={distanceText}
-                  onChangeText={handleDistanceTextChange}
-                  keyboardType="numeric"
-                  maxLength={5}
-                />
-                <Text style={styles.unit}>cm</Text>
+          {fieldType === 'coil' && (
+            <View style={styles.section}>
+              <Text style={styles.label}>
+                {t('Bobin Sarım Sayısı', 'Coil Turns')}
+              </Text>
+              <View style={styles.coilControls}>
+                <TouchableOpacity
+                  style={styles.coilButton}
+                  onPress={() =>
+                    handleCoilTurnsChange(Math.max(1, coilTurns - 1))
+                  }
+                >
+                  <Minus size={16} color="#666" />
+                </TouchableOpacity>
+                <Text style={styles.coilTurnsText}>{coilTurns}</Text>
+                <TouchableOpacity
+                  style={styles.coilButton}
+                  onPress={() =>
+                    handleCoilTurnsChange(Math.min(20, coilTurns + 1))
+                  }
+                >
+                  <Plus size={16} color="#666" />
+                </TouchableOpacity>
               </View>
+            </View>
+          )}
+
+          <View style={styles.section}>
+            <Text style={styles.label}>
+              {t('Tel Mesafesi', 'Wire Distance')}
+            </Text>
+            <View style={styles.sliderContainer}>
               <Slider
                 style={styles.slider}
                 minimumValue={10}
@@ -162,62 +171,12 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
                 onValueChange={handleDistanceChange}
                 minimumTrackTintColor="#3b82f6"
                 maximumTrackTintColor="#e5e7eb"
-                thumbTintColor="#3b82f6"
               />
+              <Text style={styles.value}>{wireDistance} cm</Text>
             </View>
-          )}
+          </View>
 
-          {fieldType === 'coil' && (
-            <View style={styles.controlGroup}>
-              <View style={styles.labelRow}>
-                <Text style={styles.parameterLabel}>
-                  {t('Sarım Sayısı', 'Number of Turns')}:
-                </Text>
-                <View style={styles.turnsControl}>
-                  <TouchableOpacity
-                    style={styles.turnsButton}
-                    onPress={() =>
-                      handleCoilTurnsChange(Math.max(1, coilTurns - 1))
-                    }
-                  >
-                    <Minus size={16} color="#666" />
-                  </TouchableOpacity>
-                  <TextInput
-                    style={styles.valueInput}
-                    value={coilTurnsText}
-                    onChangeText={handleCoilTurnsTextChange}
-                    keyboardType="numeric"
-                    maxLength={3}
-                  />
-                  <TouchableOpacity
-                    style={styles.turnsButton}
-                    onPress={() =>
-                      handleCoilTurnsChange(Math.min(20, coilTurns + 1))
-                    }
-                  >
-                    <Plus size={16} color="#666" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <Slider
-                style={styles.slider}
-                minimumValue={1}
-                maximumValue={20}
-                step={1}
-                value={coilTurns}
-                onValueChange={handleCoilTurnsChange}
-                minimumTrackTintColor="#3b82f6"
-                maximumTrackTintColor="#e5e7eb"
-                thumbTintColor="#3b82f6"
-              />
-            </View>
-          )}
-
-          <TouchableOpacity
-            style={styles.resetButton}
-            onPress={onResetParameters}
-          >
-            <RefreshCw size={16} color="#fff" />
+          <TouchableOpacity style={styles.resetButton} onPress={onReset}>
             <Text style={styles.resetButtonText}>
               {t('Parametreleri Sıfırla', 'Reset Parameters')}
             </Text>
@@ -268,67 +227,57 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
   },
-  controlGroup: {
+  section: {
     marginBottom: 16,
   },
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  parameterLabel: {
+  label: {
     fontSize: 14,
     color: '#4b5563',
-    flex: 1,
+    marginBottom: 8,
   },
-  valueInput: {
-    width: 50,
-    height: 36,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 6,
-    padding: 8,
-    textAlign: 'center',
-    marginHorizontal: 8,
-  },
-  unit: {
-    fontSize: 14,
-    color: '#6b7280',
-    width: 30,
+  sliderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   slider: {
-    width: '100%',
-    height: 40,
+    flex: 1,
+    marginRight: 12,
   },
-  turnsControl: {
+  value: {
+    fontSize: 14,
+    color: '#3b82f6',
+    fontWeight: '500',
+    minWidth: 40,
+    textAlign: 'right',
+  },
+  coilControls: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    padding: 4,
   },
-  turnsButton: {
-    width: 36,
-    height: 36,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
+  coilButton: {
+    padding: 8,
+    borderRadius: 4,
+    backgroundColor: '#fff',
+  },
+  coilTurnsText: {
+    marginHorizontal: 12,
+    fontSize: 14,
+    color: '#4b5563',
+    fontWeight: '500',
   },
   resetButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ef4444',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    backgroundColor: '#f3f4f6',
+    padding: 12,
     borderRadius: 8,
-    marginTop: 8,
+    alignItems: 'center',
   },
   resetButtonText: {
-    color: '#fff',
+    color: '#4b5563',
     fontSize: 14,
     fontWeight: '500',
-    marginLeft: 8,
   },
 });
 

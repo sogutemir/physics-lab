@@ -375,6 +375,19 @@ const experiments: Experiment[] = [
       'Interactively explore the properties and effects of magnetic fields. Experiment with different magnetic field sources and observe magnetic field lines.',
     route: '/experiments/electric/magnetic-field' as any,
   },
+  {
+    id: '29',
+    title: 'İvme Deneyi',
+    titleEn: 'Acceleration Experiment',
+    category: 'basics',
+    difficulty: 'Başlangıç',
+    difficultyEn: 'Beginner',
+    description:
+      'İvmeli hareket, hız ve konum değişimini interaktif olarak gözlemleyin. Kinematik denklemleri deneysel olarak keşfedin.',
+    descriptionEn:
+      'Interactively observe accelerated motion, velocity, and position changes. Experimentally explore kinematic equations.',
+    route: '/experiments/basics/acceleration' as any,
+  },
 ];
 
 // Category translations for display

@@ -61,6 +61,14 @@ export default function ExperimentsLayout() {
         }}
       />
       <Stack.Screen
+        name="basics/acceleration"
+        options={{
+          headerShown: false,
+          title: 'İvme Deneyi',
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
         name="electric/ohm-law"
         options={{
           headerShown: false,

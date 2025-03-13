@@ -1,13 +1,13 @@
 import React from 'react';
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
-import ExperimentLayout from '../../../components/ExperimentLayout';
+import ExperimentLayout from '../../../../components/ExperimentLayout';
 import MagneticFieldExperiment from './components/MagneticFieldExperiment';
 
-export default function MagneticExperimentPage() {
+export default function MagneticFieldPage() {
   return (
     <ExperimentLayout
-      title="Manyetizma Deneyi"
-      titleEn="Magnetism Experiment"
+      title="Manyetik Alan"
+      titleEn="Magnetic Field"
       difficulty="Orta Seviye"
       difficultyEn="Intermediate"
       description="Manyetik alanın özelliklerini ve etkilerini interaktif olarak keşfedin. Farklı manyetik alan kaynakları ile deneyler yapın ve manyetik alan çizgilerini gözlemleyin."

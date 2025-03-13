@@ -20,8 +20,8 @@ import {
   Magnet,
 } from 'lucide-react-native';
 import Slider from '@react-native-community/slider';
-import { useLanguage } from '../../../../components/LanguageContext';
-import { ParameterControlsProps } from '../lib/types';
+import { useLanguage } from '../../../../../components/LanguageContext';
+import { ParameterControlsProps } from './types';
 
 const ParameterControls: React.FC<ParameterControlsProps> = ({
   title,

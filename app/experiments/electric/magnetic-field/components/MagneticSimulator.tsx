@@ -22,7 +22,7 @@ import Svg, {
   Rect,
   LinearGradient,
 } from 'react-native-svg';
-import { useLanguage } from '../../../../components/LanguageContext';
+import { useLanguage } from '../../../../../components/LanguageContext';
 import {
   ArrowDown,
   RotateCcw,
@@ -32,7 +32,7 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react-native';
-import { FieldType, MagneticSimulatorProps } from '../lib/types';
+import { FieldType, MagneticSimulatorProps } from './types';
 import Slider from '@react-native-community/slider';
 
 // Tab bileşeni

@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import MagneticSimulator from './MagneticSimulator';
 import ParameterControls from './ParameterControls';
-import { useLanguage } from '../../../../components/LanguageContext';
-import { FieldType } from '../lib/types';
+import { useLanguage } from '../../../../../components/LanguageContext';
+import { FieldType } from './types';
 
 const MagneticFieldExperiment = () => {
   const { language, t } = useLanguage();

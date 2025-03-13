@@ -11,6 +11,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { useLanguage } from '../../../components/LanguageContext';
+import ExperimentLayout from '../../../components/ExperimentLayout';
 import ControlPanel from './components/ControlPanel';
 import DataDisplay from './components/DataDisplay';
 import FormulaDisplay from './components/FormulaDisplay';
@@ -178,85 +179,98 @@ const AccelerationExperiment: React.FC = () => {
   );
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>
-          {t('İvmeli Hareket Deneyi', 'Acceleration Experiment')}
-        </Text>
-        <Text style={styles.subtitle}>
-          {t(
-            'Bu interaktif simülasyon ile sabit ivmeli hareketi inceleyebilir, parametreleri değiştirerek sonuçları gözlemleyebilirsiniz.',
-            'With this interactive simulation, you can study uniform accelerated motion and observe results by changing parameters.'
-          )}
-        </Text>
-      </View>
+    <ExperimentLayout
+      title="İvmeli Hareket"
+      titleEn="Acceleration Motion"
+      difficulty="Başlangıç"
+      difficultyEn="Beginner"
+      description="İvmeli hareketi interaktif olarak keşfedin. Hız, ivme ve konum değişimlerini gözlemleyin."
+      descriptionEn="Interactively explore accelerated motion. Observe changes in velocity, acceleration, and position."
+      hideControls={true}
+    >
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: 40 }}
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>
+            {t('İvmeli Hareket Deneyi', 'Acceleration Experiment')}
+          </Text>
+          <Text style={styles.subtitle}>
+            {t(
+              'Bu interaktif simülasyon ile sabit ivmeli hareketi inceleyebilir, parametreleri değiştirerek sonuçları gözlemleyebilirsiniz.',
+              'With this interactive simulation, you can study uniform accelerated motion and observe results by changing parameters.'
+            )}
+          </Text>
+        </View>
 
-      <View style={styles.simulationContainer}>
-        <View style={styles.canvasContainer}>
-          {/* Zemin çizgisi */}
-          <View style={[styles.groundLine, { top: CANVAS_HEIGHT / 2 }]} />
+        <View style={styles.simulationContainer}>
+          <View style={styles.canvasContainer}>
+            {/* Zemin çizgisi */}
+            <View style={[styles.groundLine, { top: CANVAS_HEIGHT / 2 }]} />
 
-          {/* Ölçek çizgileri */}
-          <View style={styles.rulerContainer}>
-            {[...Array(11)].map((_, i) => (
-              <View key={i} style={styles.rulerMark}>
-                <View style={styles.rulerLine} />
-                <Text style={styles.rulerText}>{i * 10}</Text>
-              </View>
-            ))}
-          </View>
+            {/* Ölçek çizgileri */}
+            <View style={styles.rulerContainer}>
+              {[...Array(11)].map((_, i) => (
+                <View key={i} style={styles.rulerMark}>
+                  <View style={styles.rulerLine} />
+                  <Text style={styles.rulerText}>{i * 10}</Text>
+                </View>
+              ))}
+            </View>
 
-          {/* Hareketli nesne */}
-          <Animated.View
-            style={[
-              styles.object,
-              { top: CANVAS_HEIGHT / 2 - 15 },
-              objectStyle,
-            ]}
-          />
+            {/* Hareketli nesne */}
+            <Animated.View
+              style={[
+                styles.object,
+                { top: CANVAS_HEIGHT / 2 - 15 },
+                objectStyle,
+              ]}
+            />
 
-          {/* Tur sayacı */}
-          <View style={styles.lapCounter}>
-            <Text style={styles.lapCounterText}>
-              {lapCount > 0
-                ? `${lapCount} ${t('tur', 'laps')} (${totalDistance.toFixed(
-                    1
-                  )}m)`
-                : t('Başlangıç noktası', 'Starting point')}
-            </Text>
+            {/* Tur sayacı */}
+            <View style={styles.lapCounter}>
+              <Text style={styles.lapCounterText}>
+                {lapCount > 0
+                  ? `${lapCount} ${t('tur', 'laps')} (${totalDistance.toFixed(
+                      1
+                    )}m)`
+                  : t('Başlangıç noktası', 'Starting point')}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      <View style={styles.controlsContainer}>
-        <ControlPanel
-          acceleration={acceleration}
-          setAcceleration={setAcceleration}
-          initialVelocity={initialVelocity}
-          setInitialVelocity={setInitialVelocity}
-          time={time}
-          setTime={setTime}
-          isRunning={isRunning}
-          toggleSimulation={toggleSimulation}
-          resetSimulation={resetSimulation}
-        />
+        <View style={styles.controlsContainer}>
+          <ControlPanel
+            acceleration={acceleration}
+            setAcceleration={setAcceleration}
+            initialVelocity={initialVelocity}
+            setInitialVelocity={setInitialVelocity}
+            time={time}
+            setTime={setTime}
+            isRunning={isRunning}
+            toggleSimulation={toggleSimulation}
+            resetSimulation={resetSimulation}
+          />
 
-        <DataDisplay
-          currentTime={currentTime}
-          currentVelocity={currentVelocity}
-          currentPosition={currentPosition}
-        />
+          <DataDisplay
+            currentTime={currentTime}
+            currentVelocity={currentVelocity}
+            currentPosition={currentPosition}
+          />
 
-        <FormulaDisplay />
-      </View>
-    </ScrollView>
+          <FormulaDisplay />
+        </View>
+      </ScrollView>
+    </ExperimentLayout>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: 'transparent',
   },
   header: {
     padding: 16,

@@ -21,7 +21,7 @@ import {
 } from 'lucide-react-native';
 import Slider from '@react-native-community/slider';
 import { useLanguage } from '../../../../../components/LanguageContext';
-import { ParameterControlsProps } from './types';
+import { ParameterControlsProps, FieldType } from './types';
 
 const ParameterControls: React.FC<ParameterControlsProps> = ({
   title,
@@ -36,13 +36,10 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
   onChangeFieldType,
 }) => {
   const { language, t } = useLanguage();
-  const isEnglish = language === 'en';
   const [isExpanded, setIsExpanded] = useState(true);
   const [currentText, setCurrentText] = useState(currentIntensity.toString());
   const [distanceText, setDistanceText] = useState(wireDistance.toString());
   const [coilTurnsText, setCoilTurnsText] = useState(coilTurns.toString());
-
-  const isMobile = Dimensions.get('window').width < 768;
 
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
@@ -74,7 +71,7 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
   const handleDistanceTextChange = (text: string) => {
     setDistanceText(text);
     const parsed = parseFloat(text);
-    if (!isNaN(parsed) && parsed >= 1 && parsed <= 20) {
+    if (!isNaN(parsed) && parsed >= 10 && parsed <= 50) {
       onUpdateWireDistance(parsed);
     }
   };
@@ -82,7 +79,7 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
   const handleCoilTurnsTextChange = (text: string) => {
     setCoilTurnsText(text);
     const parsed = parseInt(text, 10);
-    if (!isNaN(parsed) && parsed >= 5 && parsed <= 50) {
+    if (!isNaN(parsed) && parsed >= 1 && parsed <= 20) {
       onUpdateCoilTurns(parsed);
     }
   };
@@ -100,7 +97,6 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
           </View>
           <Text style={styles.headerText}>{title}</Text>
         </View>
-
         <TouchableOpacity
           onPress={toggleExpanded}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -115,71 +111,6 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
 
       {isExpanded && (
         <View style={styles.content}>
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={[
-                styles.typeButton,
-                fieldType === 'straight-wire' && styles.activeTypeButton,
-              ]}
-              onPress={() => onChangeFieldType('straight-wire')}
-            >
-              <Zap
-                size={16}
-                color={fieldType === 'straight-wire' ? '#fff' : '#666'}
-              />
-              <Text
-                style={[
-                  styles.typeButtonText,
-                  fieldType === 'straight-wire' && styles.activeTypeButtonText,
-                ]}
-              >
-                {t('Düz Tel', 'Straight Wire')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.typeButton,
-                fieldType === 'coil' && styles.activeTypeButton,
-              ]}
-              onPress={() => onChangeFieldType('coil')}
-            >
-              <RotateCw
-                size={16}
-                color={fieldType === 'coil' ? '#fff' : '#666'}
-              />
-              <Text
-                style={[
-                  styles.typeButtonText,
-                  fieldType === 'coil' && styles.activeTypeButtonText,
-                ]}
-              >
-                {t('Bobin', 'Coil')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.typeButton,
-                fieldType === 'bar-magnet' && styles.activeTypeButton,
-              ]}
-              onPress={() => onChangeFieldType('bar-magnet')}
-            >
-              <Magnet
-                size={16}
-                color={fieldType === 'bar-magnet' ? '#fff' : '#666'}
-              />
-              <Text
-                style={[
-                  styles.typeButtonText,
-                  fieldType === 'bar-magnet' && styles.activeTypeButtonText,
-                ]}
-              >
-                {t('Çubuk Mıknatıs', 'Bar Magnet')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
           <View style={styles.controlGroup}>
             <View style={styles.labelRow}>
               <Text style={styles.parameterLabel}>
@@ -207,7 +138,7 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
             />
           </View>
 
-          {fieldType === 'straight-wire' && (
+          {fieldType === 'straight' && (
             <View style={styles.controlGroup}>
               <View style={styles.labelRow}>
                 <Text style={styles.parameterLabel}>
@@ -224,9 +155,9 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
               </View>
               <Slider
                 style={styles.slider}
-                minimumValue={1}
-                maximumValue={20}
-                step={0.5}
+                minimumValue={10}
+                maximumValue={50}
+                step={1}
                 value={wireDistance}
                 onValueChange={handleDistanceChange}
                 minimumTrackTintColor="#3b82f6"
@@ -242,18 +173,36 @@ const ParameterControls: React.FC<ParameterControlsProps> = ({
                 <Text style={styles.parameterLabel}>
                   {t('Sarım Sayısı', 'Number of Turns')}:
                 </Text>
-                <TextInput
-                  style={styles.valueInput}
-                  value={coilTurnsText}
-                  onChangeText={handleCoilTurnsTextChange}
-                  keyboardType="numeric"
-                  maxLength={3}
-                />
+                <View style={styles.turnsControl}>
+                  <TouchableOpacity
+                    style={styles.turnsButton}
+                    onPress={() =>
+                      handleCoilTurnsChange(Math.max(1, coilTurns - 1))
+                    }
+                  >
+                    <Minus size={16} color="#666" />
+                  </TouchableOpacity>
+                  <TextInput
+                    style={styles.valueInput}
+                    value={coilTurnsText}
+                    onChangeText={handleCoilTurnsTextChange}
+                    keyboardType="numeric"
+                    maxLength={3}
+                  />
+                  <TouchableOpacity
+                    style={styles.turnsButton}
+                    onPress={() =>
+                      handleCoilTurnsChange(Math.min(20, coilTurns + 1))
+                    }
+                  >
+                    <Plus size={16} color="#666" />
+                  </TouchableOpacity>
+                </View>
               </View>
               <Slider
                 style={styles.slider}
-                minimumValue={5}
-                maximumValue={50}
+                minimumValue={1}
+                maximumValue={20}
                 step={1}
                 value={coilTurns}
                 onValueChange={handleCoilTurnsChange}
@@ -319,33 +268,6 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
   },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  typeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  activeTypeButton: {
-    backgroundColor: '#3b82f6',
-  },
-  typeButtonText: {
-    fontSize: 14,
-    color: '#4b5563',
-    marginLeft: 8,
-  },
-  activeTypeButtonText: {
-    color: '#fff',
-  },
   controlGroup: {
     marginBottom: 16,
   },
@@ -378,6 +300,19 @@ const styles = StyleSheet.create({
   slider: {
     width: '100%',
     height: 40,
+  },
+  turnsControl: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  turnsButton: {
+    width: 36,
+    height: 36,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   resetButton: {
     flexDirection: 'row',

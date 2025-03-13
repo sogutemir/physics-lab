@@ -1,4 +1,4 @@
-export type FieldType = 'straight-wire' | 'coil' | 'bar-magnet';
+export type FieldType = 'straight' | 'coil' | 'bar';
 
 export interface MagneticSimulatorProps {
   currentIntensity: number;

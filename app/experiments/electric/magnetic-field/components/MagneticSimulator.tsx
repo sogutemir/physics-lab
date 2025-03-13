@@ -5,9 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
-  Platform,
   Animated,
-  Pressable,
 } from 'react-native';
 import Svg, {
   Line,
@@ -15,12 +13,12 @@ import Svg, {
   Path,
   G,
   Text as SvgText,
-  Ellipse,
-  Defs,
-  RadialGradient,
-  Stop,
   Rect,
+  Polygon,
+  Ellipse,
   LinearGradient,
+  Stop,
+  Defs,
 } from 'react-native-svg';
 import { useLanguage } from '../../../../../components/LanguageContext';
 import {
@@ -33,27 +31,6 @@ import {
   EyeOff,
 } from 'lucide-react-native';
 import { FieldType, MagneticSimulatorProps } from './types';
-import Slider from '@react-native-community/slider';
-
-// Tab bileşeni
-interface TabProps {
-  icon: React.ReactNode;
-  label: string;
-  isActive: boolean;
-  onPress: () => void;
-}
-
-const Tab: React.FC<TabProps> = ({ icon, label, isActive, onPress }) => (
-  <Pressable
-    style={[styles.tab, isActive && styles.activeTab]}
-    onPress={onPress}
-  >
-    {icon}
-    <Text style={[styles.tabText, isActive && styles.activeTabText]}>
-      {label}
-    </Text>
-  </Pressable>
-);
 
 const MagneticSimulator: React.FC<MagneticSimulatorProps> = ({
   currentIntensity,
@@ -67,18 +44,13 @@ const MagneticSimulator: React.FC<MagneticSimulatorProps> = ({
   onToggleFieldLines,
 }) => {
   const { language, t } = useLanguage();
-  const isEnglish = language === 'en';
   const [screenWidth, setScreenWidth] = useState(
     Dimensions.get('window').width
   );
   const animatedValue = useRef(new Animated.Value(0)).current;
   const svgWidth = screenWidth > 600 ? 500 : screenWidth - 40;
   const svgHeight = 400;
-  const [particlePosition, setParticlePosition] = useState({
-    x: svgWidth / 2,
-    y: svgHeight / 2,
-  });
-  const [magneticFieldStrength, setMagneticFieldStrength] = useState(0);
+  const [animationPhase, setAnimationPhase] = useState(0);
 
   useEffect(() => {
     const updateLayout = () => {
@@ -86,9 +58,7 @@ const MagneticSimulator: React.FC<MagneticSimulatorProps> = ({
     };
 
     Dimensions.addEventListener('change', updateLayout);
-
     return () => {
-      // React Native yeni sürümlerinde temizlik için
       const dimensionsHandler = Dimensions.addEventListener(
         'change',
         updateLayout
@@ -108,257 +78,369 @@ const MagneticSimulator: React.FC<MagneticSimulatorProps> = ({
       );
       animation.start();
 
+      const interval = setInterval(() => {
+        setAnimationPhase((prev) => (prev + 0.02) % 1);
+      }, 50);
+
       return () => {
         animation.stop();
+        clearInterval(interval);
       };
     } else {
       animatedValue.setValue(0);
+      setAnimationPhase(0);
     }
   }, [animateField, animatedValue]);
 
-  useEffect(() => {
-    // Manyetik alan gücünü hesapla
-    let strength = 0;
-    if (fieldType === 'straight-wire') {
-      // Düz tel için Biot-Savart yasası ile hesaplama
-      strength = (2e-7 * currentIntensity) / (wireDistance / 100);
-    } else if (fieldType === 'coil') {
-      // Bobin için hesaplama
-      strength = (4e-7 * Math.PI * coilTurns * currentIntensity) / 0.1;
-    } else {
-      // Çubuk mıknatıs için basitleştirilmiş hesaplama
-      strength = 0.1 * currentIntensity * 5;
-    }
-    setMagneticFieldStrength(strength);
-  }, [currentIntensity, wireDistance, coilTurns, fieldType]);
-
-  // Alan çizgilerini oluştur
-  const renderFieldLines = () => {
-    if (!showFieldLines) return null;
-
-    const lines = [];
-    const spacing = 20;
+  const renderStraightWireMagneticField = () => {
     const centerX = svgWidth / 2;
     const centerY = svgHeight / 2;
+    const radius = Math.min(svgWidth, svgHeight) * 0.4;
 
-    if (fieldType === 'straight-wire') {
-      // Düz tel için alan çizgileri - konsantrik daireler
-      for (let r = 20; r < Math.min(svgWidth, svgHeight) / 2; r += spacing) {
-        lines.push(
-          <Circle
-            key={`field-line-${r}`}
-            cx={centerX}
-            cy={centerY}
-            r={r}
-            stroke="#3b82f6"
-            strokeWidth={1}
-            fill="none"
-            strokeDasharray={animateField ? '5,5' : 'none'}
-          />
-        );
-      }
-    } else if (fieldType === 'coil') {
-      // Bobin için alan çizgileri - eliptik çizgiler
-      for (let r = 30; r < Math.min(svgWidth, svgHeight) / 2; r += spacing) {
-        lines.push(
-          <Path
-            key={`field-line-${r}`}
-            d={`M ${centerX - r * 1.5} ${centerY} A ${r * 1.5} ${r} 0 0 1 ${
-              centerX + r * 1.5
-            } ${centerY} A ${r * 1.5} ${r} 0 0 1 ${
-              centerX - r * 1.5
-            } ${centerY}`}
-            stroke="#3b82f6"
-            strokeWidth={1}
-            fill="none"
-            strokeDasharray={animateField ? '5,5' : 'none'}
-          />
-        );
-      }
-    } else if (fieldType === 'bar-magnet') {
-      // Çubuk mıknatıs için alan çizgileri
-      for (let i = -3; i <= 3; i++) {
-        if (i === 0) continue; // Ortadaki çizgiyi atla
-        const offsetY = i * spacing;
+    const normalizedCurrent = currentIntensity / 10;
+    const normalizedDistance = wireDistance / 50;
+    const fieldRadius =
+      radius * normalizedCurrent * (1 - 0.3 * normalizedDistance);
 
-        lines.push(
-          <Path
-            key={`field-line-${i}`}
-            d={`M ${centerX - 100} ${centerY + offsetY} C ${centerX - 50} ${
-              centerY + offsetY * 0.5
-            }, ${centerX + 50} ${centerY + offsetY * 0.5}, ${centerX + 100} ${
-              centerY + offsetY
-            }`}
-            stroke="#3b82f6"
-            strokeWidth={1}
-            fill="none"
-            strokeDasharray={animateField ? '5,5' : 'none'}
-          />
-        );
-      }
-    }
+    const lineCount = 16;
+    const angleStep = (2 * Math.PI) / lineCount;
 
-    return <G>{lines}</G>;
+    return (
+      <G>
+        {/* Düz tel */}
+        <Line
+          x1={centerX}
+          y1={centerY - radius}
+          x2={centerX}
+          y2={centerY + radius}
+          stroke="#333"
+          strokeWidth={6}
+        />
+
+        {/* Akım yönü oku */}
+        <Polygon
+          points={`${centerX},${centerY - radius - 20} ${centerX - 10},${
+            centerY - radius - 10
+          } ${centerX + 10},${centerY - radius - 10}`}
+          fill="#1E90FF"
+        />
+
+        {/* Akım etiketi */}
+        <SvgText
+          x={centerX}
+          y={centerY - radius - 30}
+          textAnchor="middle"
+          fill="#1E90FF"
+          fontWeight="bold"
+          fontSize="16"
+        >
+          I = {currentIntensity} A
+        </SvgText>
+
+        {/* Manyetik alan çizgileri */}
+        {showFieldLines && (
+          <>
+            <Circle
+              cx={centerX}
+              cy={centerY}
+              r={fieldRadius}
+              fill="rgba(147, 112, 219, 0.15)"
+            />
+            {Array.from({ length: lineCount }).map((_, i) => {
+              const angle =
+                i * angleStep +
+                (animateField ? animationPhase * Math.PI * 2 : 0);
+              const x = centerX + Math.cos(angle) * fieldRadius;
+              const y = centerY + Math.sin(angle) * fieldRadius;
+
+              const arrowLength = 30;
+              const arrowAngle = 0.3;
+              const startX = x - (Math.cos(angle) * arrowLength) / 2;
+              const startY = y - (Math.sin(angle) * arrowLength) / 2;
+              const endX = x + (Math.cos(angle) * arrowLength) / 2;
+              const endY = y + (Math.sin(angle) * arrowLength) / 2;
+
+              return (
+                <G
+                  key={`field-line-${i}`}
+                  stroke="rgba(147, 112, 219, 0.7)"
+                  strokeWidth={2}
+                >
+                  <Line x1={startX} y1={startY} x2={endX} y2={endY} />
+                  <Line
+                    x1={endX}
+                    y1={endY}
+                    x2={endX - Math.cos(angle + arrowAngle) * 10}
+                    y2={endY - Math.sin(angle + arrowAngle) * 10}
+                  />
+                  <Line
+                    x1={endX}
+                    y1={endY}
+                    x2={endX - Math.cos(angle - arrowAngle) * 10}
+                    y2={endY - Math.sin(angle - arrowAngle) * 10}
+                  />
+                </G>
+              );
+            })}
+          </>
+        )}
+
+        {/* Test parçacığı */}
+        <Circle
+          cx={centerX + wireDistance * 4}
+          cy={centerY}
+          r={8}
+          fill="#F95738"
+        />
+      </G>
+    );
   };
 
-  const renderStraightWire = () => (
-    <G>
-      <Circle cx={svgWidth / 2} cy={svgHeight / 2} r={8} fill="#666" />
-      <Circle cx={svgWidth / 2} cy={svgHeight / 2} r={4} fill="#333" />
-      <SvgText
-        x={`${svgWidth / 2 + 15}`}
-        y={`${svgHeight / 2 - 15}`}
-        fill="#333"
-        fontSize="12"
-        textAnchor="middle"
-      >
-        {t('Akım', 'Current')}
-      </SvgText>
-      <Circle cx={svgWidth / 2} cy={svgHeight / 2} r={2} fill="#fff" />
-    </G>
-  );
+  const renderCoilMagneticField = () => {
+    const centerX = svgWidth / 2;
+    const centerY = svgHeight / 2;
+    const radius = Math.min(svgWidth, svgHeight) * 0.4;
 
-  const renderCoil = () => (
-    <G>
-      <Circle
-        cx={svgWidth / 2}
-        cy={svgHeight / 2}
-        r={50}
-        stroke="#666"
-        strokeWidth={10}
-        fill="none"
-      />
-      <SvgText
-        x={`${svgWidth / 2}`}
-        y={`${svgHeight / 2}`}
-        fill="#333"
-        fontSize="12"
-        textAnchor="middle"
-      >
-        {`${coilTurns} ${t('sarım', 'turns')}`}
-      </SvgText>
-      {/* Akım yönünü göster */}
-      <Circle cx={svgWidth / 2 + 50} cy={svgHeight / 2} r={5} fill="#333" />
-      <Circle cx={svgWidth / 2 - 50} cy={svgHeight / 2} r={5} fill="#333" />
-    </G>
-  );
+    const coilWidth = radius * 0.4;
+    const coilHeight = radius * 1.2;
+    const turnSpacing = coilHeight / (coilTurns + 1);
 
-  const renderBarMagnet = () => (
-    <G>
-      <Rect
-        x={svgWidth / 2 - 75}
-        y={svgHeight / 2 - 25}
-        width={150}
-        height={50}
-        fill="url(#magnetGradient)"
-        rx={5}
-        ry={5}
-        stroke="#333"
-        strokeWidth={1}
-      />
-      <SvgText
-        x={`${svgWidth / 2 - 50}`}
-        y={`${svgHeight / 2 + 5}`}
-        fill="#fff"
-        fontSize="16"
-        fontWeight="bold"
-        textAnchor="middle"
-      >
-        N
-      </SvgText>
-      <SvgText
-        x={`${svgWidth / 2 + 50}`}
-        y={`${svgHeight / 2 + 5}`}
-        fill="#fff"
-        fontSize="16"
-        fontWeight="bold"
-        textAnchor="middle"
-      >
-        S
-      </SvgText>
-    </G>
-  );
+    const fieldStrength = (currentIntensity * coilTurns) / 10;
 
-  const renderParticle = () => (
-    <Circle
-      cx={particlePosition.x}
-      cy={particlePosition.y}
-      r={10}
-      fill="yellow"
-      stroke="#333"
-      strokeWidth={1}
-    />
-  );
+    return (
+      <G>
+        {/* Bobin sarımları */}
+        {Array.from({ length: coilTurns }).map((_, i) => (
+          <Ellipse
+            key={`turn-${i}`}
+            cx={centerX}
+            cy={centerY - coilHeight / 2 + (i + 1) * turnSpacing}
+            rx={coilWidth / 2}
+            ry={coilWidth / 6}
+            stroke="#333"
+            strokeWidth={3}
+            fill="none"
+          />
+        ))}
+
+        {/* Akım yönü ve etiketler */}
+        <Polygon
+          points={`${centerX},${centerY - coilHeight / 2 - 20} ${
+            centerX - 10
+          },${centerY - coilHeight / 2 - 10} ${centerX + 10},${
+            centerY - coilHeight / 2 - 10
+          }`}
+          fill="#1E90FF"
+        />
+
+        <SvgText
+          x={centerX}
+          y={centerY - coilHeight / 2 - 30}
+          textAnchor="middle"
+          fill="#1E90FF"
+          fontWeight="bold"
+          fontSize="16"
+        >
+          I = {currentIntensity} A
+        </SvgText>
+
+        {/* Manyetik alan çizgileri */}
+        {showFieldLines && (
+          <>
+            {/* İç alan çizgileri */}
+            {Array.from({ length: 7 }).map((_, i) => {
+              const x = centerX - coilWidth * 0.4 + (i * (coilWidth * 0.8)) / 6;
+              return (
+                <G
+                  key={`inner-field-${i}`}
+                  stroke="rgba(147, 112, 219, 0.7)"
+                  strokeWidth={2}
+                >
+                  <Line
+                    x1={x}
+                    y1={centerY - coilHeight / 4}
+                    x2={x}
+                    y2={centerY + coilHeight / 4}
+                  />
+                  <Line
+                    x1={x}
+                    y1={centerY + coilHeight / 4}
+                    x2={x - 5}
+                    y2={centerY + coilHeight / 4 - 10}
+                  />
+                  <Line
+                    x1={x}
+                    y1={centerY + coilHeight / 4}
+                    x2={x + 5}
+                    y2={centerY + coilHeight / 4 - 10}
+                  />
+                </G>
+              );
+            })}
+
+            {/* Dış alan göstergesi */}
+            <Circle
+              cx={centerX}
+              cy={centerY}
+              r={radius * 0.8}
+              fill="none"
+              stroke="rgba(147, 112, 219, 0.15)"
+              strokeWidth={radius * 0.35 * fieldStrength}
+            />
+          </>
+        )}
+      </G>
+    );
+  };
+
+  const renderBarMagnetField = () => {
+    const centerX = svgWidth / 2;
+    const centerY = svgHeight / 2;
+    const radius = Math.min(svgWidth, svgHeight) * 0.4;
+
+    const magnetWidth = radius * 0.8;
+    const magnetHeight = radius * 0.3;
+
+    return (
+      <G>
+        <Defs>
+          <LinearGradient id="magnetGradient" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0" stopColor="#F95738" />
+            <Stop offset="1" stopColor="#1E90FF" />
+          </LinearGradient>
+        </Defs>
+
+        {/* Mıknatıs gövdesi */}
+        <Rect
+          x={centerX - magnetWidth / 2}
+          y={centerY - magnetHeight / 2}
+          width={magnetWidth}
+          height={magnetHeight}
+          fill="url(#magnetGradient)"
+        />
+
+        {/* Kutup etiketleri */}
+        <SvgText
+          x={centerX - magnetWidth / 4}
+          y={centerY + 5}
+          textAnchor="middle"
+          fill="white"
+          fontWeight="bold"
+          fontSize="20"
+        >
+          N
+        </SvgText>
+        <SvgText
+          x={centerX + magnetWidth / 4}
+          y={centerY + 5}
+          textAnchor="middle"
+          fill="white"
+          fontWeight="bold"
+          fontSize="20"
+        >
+          S
+        </SvgText>
+
+        {/* Manyetik alan çizgileri */}
+        {showFieldLines && (
+          <>
+            {Array.from({ length: 8 }).map((_, i) => {
+              const offsetY = ((i - 4 + 0.5) * (magnetHeight * 1.5)) / 8;
+              return (
+                <Path
+                  key={`field-line-${i}`}
+                  d={`M ${centerX - magnetWidth / 2} ${
+                    centerY + offsetY
+                  } Q ${centerX} ${centerY + offsetY * 3} ${
+                    centerX + magnetWidth / 2
+                  } ${centerY + offsetY}`}
+                  stroke="rgba(147, 112, 219, 0.7)"
+                  strokeWidth={2}
+                  fill="none"
+                />
+              );
+            })}
+          </>
+        )}
+      </G>
+    );
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.tabContainer}>
-        <Tab
-          icon={
-            <Zap
-              size={16}
-              color={fieldType === 'straight-wire' ? '#3b82f6' : '#666'}
-            />
-          }
-          label={t('Düz Tel', 'Straight Wire')}
-          isActive={fieldType === 'straight-wire'}
-          onPress={() => onChangeFieldType('straight-wire')}
-        />
-        <Tab
-          icon={
-            <RotateCcw
-              size={16}
-              color={fieldType === 'coil' ? '#3b82f6' : '#666'}
-            />
-          }
-          label={t('Bobin', 'Coil')}
-          isActive={fieldType === 'coil'}
+        <TouchableOpacity
+          style={[styles.tab, fieldType === 'straight' && styles.activeTab]}
+          onPress={() => onChangeFieldType('straight')}
+        >
+          <Zap
+            size={16}
+            color={fieldType === 'straight' ? '#3b82f6' : '#666'}
+          />
+          <Text
+            style={[
+              styles.tabText,
+              fieldType === 'straight' && styles.activeTabText,
+            ]}
+          >
+            {t('Düz Tel', 'Straight Wire')}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, fieldType === 'coil' && styles.activeTab]}
           onPress={() => onChangeFieldType('coil')}
-        />
-        <Tab
-          icon={
-            <Magnet
-              size={16}
-              color={fieldType === 'bar-magnet' ? '#3b82f6' : '#666'}
-            />
-          }
-          label={t('Çubuk Mıknatıs', 'Bar Magnet')}
-          isActive={fieldType === 'bar-magnet'}
-          onPress={() => onChangeFieldType('bar-magnet')}
-        />
+        >
+          <Grid size={16} color={fieldType === 'coil' ? '#3b82f6' : '#666'} />
+          <Text
+            style={[
+              styles.tabText,
+              fieldType === 'coil' && styles.activeTabText,
+            ]}
+          >
+            {t('Bobin', 'Coil')}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, fieldType === 'bar' && styles.activeTab]}
+          onPress={() => onChangeFieldType('bar')}
+        >
+          <Magnet size={16} color={fieldType === 'bar' ? '#3b82f6' : '#666'} />
+          <Text
+            style={[
+              styles.tabText,
+              fieldType === 'bar' && styles.activeTabText,
+            ]}
+          >
+            {t('Çubuk Mıknatıs', 'Bar Magnet')}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.svgContainer}>
-        <Svg
-          width={svgWidth}
-          height={svgHeight}
-          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-        >
-          <Defs>
-            <LinearGradient id="magnetGradient" x1="0" y1="0" x2="1" y2="0">
-              <Stop offset="0" stopColor="#3b82f6" />
-              <Stop offset="1" stopColor="#ef4444" />
-            </LinearGradient>
-          </Defs>
-          {renderFieldLines()}
-          {fieldType === 'straight-wire' && renderStraightWire()}
-          {fieldType === 'coil' && renderCoil()}
-          {fieldType === 'bar-magnet' && renderBarMagnet()}
-          {renderParticle()}
+        <Svg width={svgWidth} height={svgHeight}>
+          {fieldType === 'straight' && renderStraightWireMagneticField()}
+          {fieldType === 'coil' && renderCoilMagneticField()}
+          {fieldType === 'bar' && renderBarMagnetField()}
         </Svg>
       </View>
 
       <View style={styles.controlsContainer}>
-        <Pressable style={styles.controlButton} onPress={onToggleAnimation}>
+        <TouchableOpacity
+          style={styles.controlButton}
+          onPress={onToggleAnimation}
+        >
           <RotateCcw size={20} color={animateField ? '#3b82f6' : '#666'} />
           <Text style={styles.controlButtonText}>
             {animateField
               ? t('Animasyonu Durdur', 'Stop Animation')
               : t('Alanı Canlandır', 'Animate Field')}
           </Text>
-        </Pressable>
+        </TouchableOpacity>
 
-        <Pressable style={styles.controlButton} onPress={onToggleFieldLines}>
+        <TouchableOpacity
+          style={styles.controlButton}
+          onPress={onToggleFieldLines}
+        >
           {showFieldLines ? (
             <Eye size={20} color="#3b82f6" />
           ) : (
@@ -369,34 +451,7 @@ const MagneticSimulator: React.FC<MagneticSimulatorProps> = ({
               ? t('Alan Çizgilerini Gizle', 'Hide Field Lines')
               : t('Alan Çizgilerini Göster', 'Show Field Lines')}
           </Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.infoContainer}>
-        <Text style={styles.infoTitle}>
-          {t('Manyetik Alan Şiddeti', 'Magnetic Field Strength')}
-        </Text>
-        <Text style={styles.infoValue}>
-          {magneticFieldStrength.toExponential(2)} Tesla
-        </Text>
-        <Text style={styles.infoDescription}>
-          {t(
-            `Bu değer, referans noktasındaki manyetik alan şiddetini temsil eder. Gerçek alan şiddeti, ${
-              fieldType === 'straight-wire'
-                ? 'telin'
-                : fieldType === 'coil'
-                ? 'bobinin'
-                : 'mıknatısın'
-            } etrafındaki farklı konumlarda değişiklik gösterir.`,
-            `This value represents the magnetic field strength at a reference point. The actual field strength varies at different locations around the ${
-              fieldType === 'straight-wire'
-                ? 'wire'
-                : fieldType === 'coil'
-                ? 'coil'
-                : 'magnet'
-            }.`
-          )}
-        </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -464,28 +519,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 14,
     color: '#4b5563',
-  },
-  infoContainer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  infoValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#3b82f6',
-    marginBottom: 8,
-  },
-  infoDescription: {
-    fontSize: 14,
-    color: '#6b7280',
-    lineHeight: 20,
   },
 });
 

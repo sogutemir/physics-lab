@@ -9,15 +9,15 @@ const MagneticFieldExperiment = () => {
   const { language, t } = useLanguage();
   const isEnglish = language === 'en';
 
-  // Durum değişkenleri
+  // State değişkenleri
   const [currentIntensity, setCurrentIntensity] = useState(5);
-  const [wireDistance, setWireDistance] = useState(10);
-  const [coilTurns, setCoilTurns] = useState(20);
-  const [fieldType, setFieldType] = useState<FieldType>('straight-wire');
+  const [wireDistance, setWireDistance] = useState(30);
+  const [coilTurns, setCoilTurns] = useState(10);
+  const [fieldType, setFieldType] = useState<FieldType>('straight');
   const [animateField, setAnimateField] = useState(false);
   const [showFieldLines, setShowFieldLines] = useState(true);
 
-  // Durumu güncelleme işlevleri
+  // Durum güncelleme işlevleri
   const updateCurrentIntensity = (value: number) => {
     setCurrentIntensity(value);
   };
@@ -31,11 +31,11 @@ const MagneticFieldExperiment = () => {
   };
 
   const toggleAnimation = () => {
-    setAnimateField((prev) => !prev);
+    setAnimateField(!animateField);
   };
 
   const toggleFieldLines = () => {
-    setShowFieldLines((prev) => !prev);
+    setShowFieldLines(!showFieldLines);
   };
 
   const changeFieldType = (type: FieldType) => {
@@ -44,8 +44,8 @@ const MagneticFieldExperiment = () => {
 
   const resetParameters = () => {
     setCurrentIntensity(5);
-    setWireDistance(10);
-    setCoilTurns(20);
+    setWireDistance(30);
+    setCoilTurns(10);
     setAnimateField(false);
   };
 

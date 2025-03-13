@@ -305,6 +305,12 @@ const MagneticSimulator: React.FC<MagneticSimulatorProps> = ({
 
     const magnetWidth = radius * 0.8;
     const magnetHeight = radius * 0.3;
+    const magnetX = centerX - magnetWidth / 2;
+    const magnetY = centerY - magnetHeight / 2;
+
+    // Alan çizgileri için kontrol noktaları
+    const controlPointDistance = magnetWidth * 0.8;
+    const fieldLineCount = 12;
 
     return (
       <G>
@@ -317,8 +323,8 @@ const MagneticSimulator: React.FC<MagneticSimulatorProps> = ({
 
         {/* Mıknatıs gövdesi */}
         <Rect
-          x={centerX - magnetWidth / 2}
-          y={centerY - magnetHeight / 2}
+          x={magnetX}
+          y={magnetY}
           width={magnetWidth}
           height={magnetHeight}
           fill="url(#magnetGradient)"
@@ -326,7 +332,7 @@ const MagneticSimulator: React.FC<MagneticSimulatorProps> = ({
 
         {/* Kutup etiketleri */}
         <SvgText
-          x={centerX - magnetWidth / 4}
+          x={magnetX + magnetWidth / 4}
           y={centerY + 5}
           textAnchor="middle"
           fill="white"
@@ -336,7 +342,7 @@ const MagneticSimulator: React.FC<MagneticSimulatorProps> = ({
           N
         </SvgText>
         <SvgText
-          x={centerX + magnetWidth / 4}
+          x={magnetX + (magnetWidth * 3) / 4}
           y={centerY + 5}
           textAnchor="middle"
           fill="white"
@@ -349,24 +355,92 @@ const MagneticSimulator: React.FC<MagneticSimulatorProps> = ({
         {/* Manyetik alan çizgileri */}
         {showFieldLines && (
           <>
-            {Array.from({ length: 8 }).map((_, i) => {
-              const offsetY = ((i - 4 + 0.5) * (magnetHeight * 1.5)) / 8;
+            {Array.from({ length: fieldLineCount }).map((_, i) => {
+              const offsetY =
+                ((i - fieldLineCount / 2 + 0.5) * magnetHeight * 1.2) /
+                fieldLineCount;
+              const startX = magnetX + magnetWidth;
+              const startY = centerY + offsetY;
+              const endX = magnetX;
+              const endY = centerY + offsetY;
+
+              // Eğrisel alan çizgisi için kontrol noktaları
+              const cp1x = startX + controlPointDistance;
+              const cp1y = startY;
+              const cp2x = endX - controlPointDistance;
+              const cp2y = endY;
+
+              // Animasyon fazını uygula
+              const animOffset = animateField
+                ? Math.sin(animationPhase * Math.PI * 2) * 10
+                : 0;
+
+              const path = `
+                M ${startX} ${startY}
+                C ${cp1x} ${cp1y + animOffset},
+                  ${cp2x} ${cp2y + animOffset},
+                  ${endX} ${endY}
+              `;
+
               return (
-                <Path
-                  key={`field-line-${i}`}
-                  d={`M ${centerX - magnetWidth / 2} ${
-                    centerY + offsetY
-                  } Q ${centerX} ${centerY + offsetY * 3} ${
-                    centerX + magnetWidth / 2
-                  } ${centerY + offsetY}`}
-                  stroke="rgba(147, 112, 219, 0.7)"
-                  strokeWidth={2}
-                  fill="none"
-                />
+                <G key={`field-line-${i}`}>
+                  <Path
+                    d={path}
+                    stroke="rgba(147, 112, 219, 0.7)"
+                    strokeWidth={2}
+                    fill="none"
+                  />
+                  {/* Ok başları */}
+                  {i % 2 === 0 && (
+                    <>
+                      <Circle
+                        cx={magnetX + magnetWidth / 2}
+                        cy={startY}
+                        r={3}
+                        fill="rgba(147, 112, 219, 0.7)"
+                      />
+                      {animateField && (
+                        <Circle
+                          cx={
+                            magnetX +
+                            magnetWidth / 2 +
+                            Math.cos(animationPhase * Math.PI * 2) * 20
+                          }
+                          cy={
+                            startY + Math.sin(animationPhase * Math.PI * 2) * 5
+                          }
+                          r={2}
+                          fill="rgba(147, 112, 219, 0.5)"
+                        />
+                      )}
+                    </>
+                  )}
+                </G>
               );
             })}
+
+            {/* Alan şiddeti göstergesi */}
+            <Circle
+              cx={centerX}
+              cy={centerY}
+              r={radius * 0.9}
+              fill="none"
+              stroke="rgba(147, 112, 219, 0.15)"
+              strokeWidth={radius * 0.2}
+            />
           </>
         )}
+
+        {/* Alan yönü etiketi */}
+        <SvgText
+          x={centerX}
+          y={magnetY + magnetHeight + 40}
+          textAnchor="middle"
+          fill="#9370DB"
+          fontSize="16"
+        >
+          {t('Manyetik Alan Çizgileri: N → S', 'Magnetic Field Lines: N → S')}
+        </SvgText>
       </G>
     );
   };

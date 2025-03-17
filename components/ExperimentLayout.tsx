@@ -1,10 +1,12 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -14,6 +16,7 @@ import {
   RotateCcw,
   Info,
   Languages,
+  X,
 } from 'lucide-react-native';
 import { useLanguage } from './LanguageContext';
 
@@ -48,6 +51,7 @@ export default function ExperimentLayout({
 }: ExperimentLayoutProps) {
   const router = useRouter();
   const { language, setLanguage, t } = useLanguage();
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
 
   const toggleLanguage = () => {
     setLanguage(language === 'tr' ? 'en' : 'tr');
@@ -64,6 +68,8 @@ export default function ExperimentLayout({
     reset: t('Sıfırla', 'Reset'),
     info: t('Bilgi', 'Info'),
     about: t('Deney Hakkında', 'About Experiment'),
+    close: t('Kapat', 'Close'),
+    infoTitle: t('Deney Bilgisi', 'Experiment Information'),
   };
 
   return (
@@ -126,19 +132,40 @@ export default function ExperimentLayout({
             <Text style={styles.controlText}>{buttonTexts.reset}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.controlButton} onPress={() => {}}>
+          <TouchableOpacity 
+            style={styles.controlButton} 
+            onPress={() => setInfoModalVisible(true)}
+          >
             <Info size={24} color="#3498db" />
             <Text style={styles.controlText}>{buttonTexts.info}</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {!hideDescription && (
-        <ScrollView style={styles.descriptionContainer}>
-          <Text style={styles.descriptionTitle}>{buttonTexts.about}</Text>
-          <Text style={styles.descriptionText}>{currentDescription}</Text>
-        </ScrollView>
-      )}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={infoModalVisible}
+        onRequestClose={() => setInfoModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{buttonTexts.infoTitle}</Text>
+              <TouchableOpacity 
+                onPress={() => setInfoModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <X size={24} color="#2c3e50" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalContent}>
+              <Text style={styles.modalText}>{currentDescription}</Text>
+            </ScrollView>
+            
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -261,5 +288,60 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#7f8c8d',
     lineHeight: 16,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    paddingBottom: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  modalContent: {
+    marginBottom: 20,
+  },
+  modalText: {
+    fontSize: 14,
+    color: '#2c3e50',
+    lineHeight: 20,
+  },
+  closeModalButton: {
+    backgroundColor: '#3498db',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  closeModalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });

@@ -187,7 +187,13 @@ export default function HomeScreen() {
           {t('Deney Kategorileri', 'Experiment Categories')}
         </Text>
         <View style={styles.categoriesContainer}>
-          <Link href="/(tabs)/experiments?selectedCategory=mechanics" asChild>
+          <Link
+            href={{
+              pathname: '/(tabs)/experiments',
+              params: { selectedCategory: 'mechanics' },
+            }}
+            asChild
+          >
             <TouchableOpacity style={styles.categoryCard}>
               <Text style={styles.categoryTitle}>
                 {t('Mekanik', 'Mechanics')}
@@ -201,7 +207,13 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </Link>
 
-          <Link href="/(tabs)/experiments?selectedCategory=waves" asChild>
+          <Link
+            href={{
+              pathname: '/(tabs)/experiments',
+              params: { selectedCategory: 'waves' },
+            }}
+            asChild
+          >
             <TouchableOpacity style={styles.categoryCard}>
               <Text style={styles.categoryTitle}>
                 {t('Dalga ve Optik', 'Waves and Optics')}
@@ -215,7 +227,13 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </Link>
 
-          <Link href="/(tabs)/experiments?selectedCategory=electricity" asChild>
+          <Link
+            href={{
+              pathname: '/(tabs)/experiments',
+              params: { selectedCategory: 'electricity' },
+            }}
+            asChild
+          >
             <TouchableOpacity style={styles.categoryCard}>
               <Text style={styles.categoryTitle}>
                 {t('Elektrik ve Manyetizma', 'Electricity and Magnetism')}
@@ -229,7 +247,13 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </Link>
 
-          <Link href="/(tabs)/experiments?selectedCategory=basics" asChild>
+          <Link
+            href={{
+              pathname: '/(tabs)/experiments',
+              params: { selectedCategory: 'basics' },
+            }}
+            asChild
+          >
             <TouchableOpacity style={styles.categoryCard}>
               <Text style={styles.categoryTitle}>
                 {t('Temel Kavramlar', 'Basic Concepts')}
@@ -243,7 +267,13 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </Link>
 
-          <Link href="/(tabs)/experiments?selectedCategory=modern" asChild>
+          <Link
+            href={{
+              pathname: '/(tabs)/experiments',
+              params: { selectedCategory: 'modern' },
+            }}
+            asChild
+          >
             <TouchableOpacity style={styles.categoryCard}>
               <Text style={styles.categoryTitle}>
                 {t('Modern Fizik', 'Modern Physics')}

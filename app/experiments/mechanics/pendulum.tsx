@@ -3,7 +3,6 @@ import { SafeAreaView, View, Text, Dimensions, Platform, StyleSheet, ScrollView 
 import Slider from "@react-native-community/slider";
 import Svg, { Line, Circle } from "react-native-svg";
 import ExperimentLayout from '../../../components/ExperimentLayout';
-import { Button } from "@/components/ui/button";
 
 const { width, height } = Dimensions.get("window");
 const G = 9.81; // Yerçekimi ivmesi (m/s²)

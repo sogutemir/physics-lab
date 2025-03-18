@@ -13,6 +13,8 @@ const ElectronCollector: React.FC<ElectronCollectorProps> = ({
 }) => {
   const { t } = useLanguage();
   const glowAnimation = useRef(new Animated.Value(0)).current;
+  // Animasyon referansını saklamak için
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
 
   // Gerilim değerine göre renk tonu belirle (kırmızı = negatif, mavi = pozitif)
   const voltageColor =
@@ -25,9 +27,15 @@ const ElectronCollector: React.FC<ElectronCollectorProps> = ({
 
   // Akım değerine bağlı olarak parlama animasyonu
   useEffect(() => {
+    // Önceki animasyonu temizle
+    if (animationRef.current) {
+      animationRef.current.stop();
+      animationRef.current = null;
+    }
+
     if (current > 0) {
       // Parlama animasyonu
-      Animated.loop(
+      const animation = Animated.loop(
         Animated.sequence([
           Animated.timing(glowAnimation, {
             toValue: 1,
@@ -40,15 +48,22 @@ const ElectronCollector: React.FC<ElectronCollectorProps> = ({
             useNativeDriver: true,
           }),
         ])
-      ).start();
+      );
+
+      // Animasyonu başlat ve referansını sakla
+      animation.start();
+      animationRef.current = animation;
     } else {
       // Animasyonu durdur
       glowAnimation.setValue(0);
     }
 
+    // Temizleme fonksiyonu
     return () => {
-      // Bileşen kaldırıldığında animasyonu durdur
-      glowAnimation.stopAnimation();
+      if (animationRef.current) {
+        animationRef.current.stop();
+        animationRef.current = null;
+      }
     };
   }, [current, glowAnimation]);
 

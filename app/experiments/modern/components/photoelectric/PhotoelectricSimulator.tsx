@@ -1,5 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Animated,
+  Platform,
+} from 'react-native';
 import { useLanguage } from '../../../../../components/LanguageContext';
 import PhotonSource from './PhotonSource';
 import MetalSurface from './MetalSurface';
@@ -17,6 +24,7 @@ import {
 
 const PhotoelectricSimulator: React.FC = () => {
   const { language, t } = useLanguage();
+  const isMobile = Platform.OS !== 'web';
 
   // Durum değişkenleri
   const [frequency, setFrequency] = useState(6e14); // 600 THz (yaklaşık 500 nm)
@@ -33,8 +41,10 @@ const PhotoelectricSimulator: React.FC = () => {
   const [efCurveData, setEFCurveData] = useState<any[]>([]);
 
   // Animasyon için değişkenler
-  const emissionAnimation = React.useRef(new Animated.Value(0)).current;
-  const collectAnimation = React.useRef(new Animated.Value(0)).current;
+  const emissionAnimation = useRef(new Animated.Value(0)).current;
+  const collectAnimation = useRef(new Animated.Value(0)).current;
+  // Animasyon referansını saklamak için
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
 
   // Eşik frekansını hesapla
   const thresholdFrequency = calculateThresholdFrequency(metalType);
@@ -45,8 +55,14 @@ const PhotoelectricSimulator: React.FC = () => {
 
   // Emisyon durumu değiştiğinde animasyon
   useEffect(() => {
+    // Önceki animasyonu durdur
+    if (animationRef.current) {
+      animationRef.current.stop();
+      animationRef.current = null;
+    }
+
     if (isEmittingElectrons) {
-      Animated.sequence([
+      const animation = Animated.sequence([
         Animated.timing(emissionAnimation, {
           toValue: 1,
           duration: 500,
@@ -57,9 +73,12 @@ const PhotoelectricSimulator: React.FC = () => {
           duration: 300,
           useNativeDriver: true,
         }),
-      ]).start();
+      ]);
+
+      animation.start();
+      animationRef.current = animation;
     } else {
-      Animated.parallel([
+      const animation = Animated.parallel([
         Animated.timing(emissionAnimation, {
           toValue: 0,
           duration: 200,
@@ -70,8 +89,19 @@ const PhotoelectricSimulator: React.FC = () => {
           duration: 200,
           useNativeDriver: true,
         }),
-      ]).start();
+      ]);
+
+      animation.start();
+      animationRef.current = animation;
     }
+
+    // Temizleme fonksiyonu
+    return () => {
+      if (animationRef.current) {
+        animationRef.current.stop();
+        animationRef.current = null;
+      }
+    };
   }, [isEmittingElectrons, emissionAnimation, collectAnimation]);
 
   // Değerler değiştiğinde hesaplamaları güncelle
@@ -148,17 +178,24 @@ const PhotoelectricSimulator: React.FC = () => {
             },
           ]}
         >
-          <PhotonSource
-            wavelength={frequencyToWavelength(frequency)}
-            intensity={intensity}
-            isActive={isLightOn}
-          />
-          <MetalSurface
-            metalType={metalType}
-            emittingElectrons={isEmittingElectrons}
-            intensity={intensity}
-          />
-          <ElectronCollector voltage={stoppingVoltage} current={current} />
+          <View
+            style={[
+              styles.apparatusContainer,
+              isMobile && styles.apparatusMobile,
+            ]}
+          >
+            <PhotonSource
+              wavelength={frequencyToWavelength(frequency)}
+              intensity={intensity}
+              isActive={isLightOn}
+            />
+            <MetalSurface
+              metalType={metalType}
+              emittingElectrons={isEmittingElectrons}
+              intensity={intensity}
+            />
+            <ElectronCollector voltage={stoppingVoltage} current={current} />
+          </View>
         </Animated.View>
 
         {/* Kontrol Paneli ve Sonuçlar */}
@@ -314,6 +351,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+  },
+  apparatusContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    width: '100%',
+  },
+  apparatusMobile: {
+    // Mobil cihazlarda bileşenlerin arasındaki mesafeyi ayarla
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
   },
   controlsAndResults: {
     flexDirection: 'row',

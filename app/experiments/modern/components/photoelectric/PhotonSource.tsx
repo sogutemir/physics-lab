@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import React, { useRef } from 'react';
+import { View, StyleSheet, Animated, Platform } from 'react-native';
 import { useLanguage } from '../../../../../components/LanguageContext';
 import { wavelengthToColor } from '../../utils/photoelectric';
 
@@ -16,10 +16,13 @@ const PhotonSource: React.FC<PhotonSourceProps> = ({
 }) => {
   const { t } = useLanguage();
   const lightColor = wavelengthToColor(wavelength);
+  const isMobile = Platform.OS !== 'web';
 
   // Animasyon için Animated değerleri
-  const photonAnimValues = React.useRef<Animated.Value[]>([]);
+  const photonAnimValues = useRef<Animated.Value[]>([]);
   const [photonCount, setPhotonCount] = React.useState(0);
+  // Animasyon referansını saklamak için
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
 
   React.useEffect(() => {
     // Işık şiddetine göre foton sayısını hesapla
@@ -33,6 +36,12 @@ const PhotonSource: React.FC<PhotonSourceProps> = ({
   }, [intensity]);
 
   React.useEffect(() => {
+    // Önceki animasyonu durdur
+    if (animationRef.current) {
+      animationRef.current.stop();
+      animationRef.current = null;
+    }
+
     // Işık aktifse animasyonu başlat
     if (isActive && photonCount > 0) {
       // Tüm fotonlar için animasyon oluştur
@@ -53,12 +62,28 @@ const PhotonSource: React.FC<PhotonSourceProps> = ({
       const loop = Animated.loop(Animated.stagger(100, animations));
 
       loop.start();
+      animationRef.current = loop;
 
       return () => {
-        loop.stop();
+        if (animationRef.current) {
+          animationRef.current.stop();
+          animationRef.current = null;
+        }
       };
     }
   }, [isActive, photonCount]);
+
+  // Foton için translation hesaplama
+  const getPhotonTranslation = (anim: Animated.Value) => {
+    // Metale kadar olan mesafe (60) - mobilde metal yüzey daha ince (40px) ama fotonlar metal yüzeyin başlangıcına kadar gitmeli
+    const distanceToMetal = isMobile ? 60 : 60;
+
+    return anim.interpolate({
+      inputRange: [0, 1],
+      // Fotonlar metal yüzeyin başlangıcına kadar gidecek, metali geçmeyecek
+      outputRange: [0, distanceToMetal],
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -89,13 +114,14 @@ const PhotonSource: React.FC<PhotonSourceProps> = ({
               {
                 backgroundColor: lightColor,
                 top: (index - photonCount / 2) * 4 + 80,
-                opacity: 0.7,
+                width: isMobile ? 35 : 20, // Mobilde daha kısa fotonlar, metal yüzeyi geçmemesi için
+                opacity: anim.interpolate({
+                  inputRange: [0, 0.8, 1],
+                  outputRange: [0.7, 0.9, 0], // Foton metal yüzeye yaklaştıkça kaybolur
+                }),
                 transform: [
                   {
-                    translateX: anim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 100],
-                    }),
+                    translateX: getPhotonTranslation(anim),
                   },
                   {
                     scale: anim.interpolate({

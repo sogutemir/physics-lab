@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import React, { useRef } from 'react';
+import { View, StyleSheet, Animated, Platform } from 'react-native';
 import { useLanguage } from '../../../../../components/LanguageContext';
 import { MetalType } from '../../utils/photoelectric';
 
@@ -15,10 +15,15 @@ const MetalSurface: React.FC<MetalSurfaceProps> = ({
   intensity,
 }) => {
   const { t } = useLanguage();
+  const isMobile = Platform.OS !== 'web';
+  // Metal genişliği (referans olarak kullanılacak)
+  const metalWidth = isMobile ? 40 : 80;
 
   // Elektron animasyonları için değişkenler
-  const electronAnimValues = React.useRef<Animated.Value[]>([]);
+  const electronAnimValues = useRef<Animated.Value[]>([]);
   const [electronCount, setElectronCount] = React.useState(0);
+  // Animasyon referansını saklamak için
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
 
   React.useEffect(() => {
     // Elektron yoğunluğu (ışık şiddetine bağlı)
@@ -34,6 +39,12 @@ const MetalSurface: React.FC<MetalSurfaceProps> = ({
   }, [intensity, emittingElectrons]);
 
   React.useEffect(() => {
+    // Önceki animasyonu durdur
+    if (animationRef.current) {
+      animationRef.current.stop();
+      animationRef.current = null;
+    }
+
     // Elektron emisyonu varsa animasyonu başlat
     if (emittingElectrons && electronCount > 0) {
       // Tüm elektronlar için animasyon oluştur
@@ -54,9 +65,13 @@ const MetalSurface: React.FC<MetalSurfaceProps> = ({
       const loop = Animated.loop(Animated.stagger(150, animations));
 
       loop.start();
+      animationRef.current = loop;
 
       return () => {
-        loop.stop();
+        if (animationRef.current) {
+          animationRef.current.stop();
+          animationRef.current = null;
+        }
       };
     }
   }, [emittingElectrons, electronCount]);
@@ -80,7 +95,15 @@ const MetalSurface: React.FC<MetalSurfaceProps> = ({
   return (
     <View style={styles.container}>
       {/* Metal yüzeyi */}
-      <View style={[styles.metalSurface, { backgroundColor: getMetalColor() }]}>
+      <View
+        style={[
+          styles.metalSurface,
+          {
+            backgroundColor: getMetalColor(),
+            width: metalWidth,
+          },
+        ]}
+      >
         <View style={styles.metalGradient} />
       </View>
 
@@ -93,11 +116,12 @@ const MetalSurface: React.FC<MetalSurfaceProps> = ({
               styles.electron,
               {
                 top: 100 + Math.random() * 40 - 20,
+                left: metalWidth, // Metal yüzeyin kenarından elektronlar çıkacak
                 transform: [
                   {
                     translateX: anim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [0, 100],
+                      outputRange: [0, 80],
                     }),
                   },
                   {
@@ -131,7 +155,7 @@ const styles = StyleSheet.create({
   },
   metalSurface: {
     height: 256,
-    width: 80,
+    width: 80, // Web için varsayılan, mobilde override edilecek
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -162,7 +186,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 4,
     elevation: 4,
-    left: 80,
+    // left özelliği inline style olarak belirlenecek
   },
 });
 

@@ -38,10 +38,17 @@ const DoubleSlitSimulation: React.FC<ExperimentSimulationProps> = ({
   // Dalga animasyonu için shared values
   const waveOpacity = useSharedValue(0);
 
+  // Kaynak ve ekran mesafelerine göre pozisyonları hesaplama
+  // Toplam mesafenin yüzdesi olarak mesafeleri belirleme
+  const totalDistance = sourceDistance + screenDistance;
+  const sourceRatio = 0.2; // Kaynak pozisyonu
+  const barrierRatio = sourceDistance / totalDistance; // Bariyer pozisyonu
+  const screenRatio = 1 - 0.2; // Ekran pozisyonu
+
   // Komponentlerin yatay pozisyonları (piksel cinsinden)
-  const sourceX = screenWidth * 0.15; // Işık kaynağı sol tarafta
-  const barrierX = screenWidth * 0.5; // Bariyer ortada
-  const screenX = screenWidth * 0.85; // Ekran sağ tarafta
+  const sourceX = screenWidth * sourceRatio;
+  const barrierX = screenWidth * Math.max(0.3, Math.min(0.7, barrierRatio)); // Bariyer 0.3-0.7 arasında sınırlı
+  const screenX = screenWidth * screenRatio;
 
   // Ekran merkez Y pozisyonu
   const centerY = 100;

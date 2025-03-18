@@ -6,13 +6,13 @@ import Animated, {
   withTiming,
   withRepeat,
   Easing,
-  withDelay,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import { useLanguage } from '../../../../../components/LanguageContext';
 import { wavelengthToRGB } from '../../utils/physics';
 
 interface WaveSourceProps {
-  wavelength: number; // nm cinsinden
+  wavelength: number;
   isActive: boolean;
 }
 
@@ -20,103 +20,82 @@ const WaveSource: React.FC<WaveSourceProps> = ({ wavelength, isActive }) => {
   const { t } = useLanguage();
   const color = wavelengthToRGB(wavelength);
 
-  // Işık animasyonu için shared values
+  // Animasyon değerleri
   const pulseScale = useSharedValue(1);
-  const glowOpacity = useSharedValue(0.7);
-  const brightness = useSharedValue(0.8);
+  const pulseOpacity = useSharedValue(0);
 
-  // Animasyonlar
+  // Işık kaynağı pulse animasyonu
   useEffect(() => {
     if (isActive) {
-      // Nabız animasyonu
+      pulseScale.value = 1;
+      pulseOpacity.value = 0.8;
+
       pulseScale.value = withRepeat(
-        withTiming(1.15, { duration: 1200, easing: Easing.inOut(Easing.sin) }),
+        withTiming(1.4, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
         -1,
         true
       );
 
-      // Parlaklık animasyonu
-      glowOpacity.value = withRepeat(
-        withTiming(0.9, { duration: 1500, easing: Easing.inOut(Easing.quad) }),
+      pulseOpacity.value = withRepeat(
+        withTiming(0, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
         -1,
-        true
-      );
-
-      // Işık parlaması
-      brightness.value = withRepeat(
-        withTiming(1, { duration: 800, easing: Easing.inOut(Easing.quad) }),
-        -1,
-        true
+        false
       );
     } else {
-      // Animasyonları durdur ve reset et
-      pulseScale.value = withTiming(1, { duration: 300 });
-      glowOpacity.value = withTiming(0.5, { duration: 300 });
-      brightness.value = withTiming(0.6, { duration: 300 });
+      cancelAnimation(pulseScale);
+      cancelAnimation(pulseOpacity);
+
+      pulseScale.value = withTiming(1);
+      pulseOpacity.value = withTiming(0);
     }
+
+    return () => {
+      cancelAnimation(pulseScale);
+      cancelAnimation(pulseOpacity);
+    };
   }, [isActive]);
 
-  // Animated styles
-  const sourceStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulseScale.value }],
-    opacity: brightness.value,
-  }));
-
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-  }));
-
-  // RGB bileşenlerini alma
-  const rgbMatch = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-  const [, r, g, b] = rgbMatch ? rgbMatch.map(Number) : [0, 0, 0, 0];
+  // Pulse animasyon stili
+  const pulseAnimStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: pulseScale.value }],
+      opacity: pulseOpacity.value,
+    };
+  });
 
   return (
     <View style={styles.container}>
-      {/* Işık kaynağı standı */}
-      <View style={styles.stand} />
+      {/* Işık Kaynağı */}
+      <View style={styles.sourceContainer}>
+        {/* Pulse animasyonu */}
+        <Animated.View
+          style={[
+            styles.pulse,
+            { backgroundColor: color + '30' },
+            pulseAnimStyle,
+          ]}
+        />
 
-      {/* Işık kaynağı dış parlaklık */}
-      <Animated.View
-        style={[
-          styles.outerGlow,
-          glowStyle,
-          {
-            backgroundColor: `rgba(${r}, ${g}, ${b}, 0.15)`,
-            shadowColor: color,
-          },
-        ]}
-      />
+        {/* Işık kaynağı merkezi */}
+        <View
+          style={[
+            styles.source,
+            { backgroundColor: isActive ? color : '#94a3b8' },
+          ]}
+        >
+          <View style={styles.sourceInner} />
+        </View>
 
-      {/* Işık kaynağı iç parlaklık */}
-      <Animated.View
-        style={[
-          styles.innerGlow,
-          glowStyle,
-          {
-            backgroundColor: `rgba(${r}, ${g}, ${b}, 0.3)`,
-            shadowColor: color,
-          },
-        ]}
-      />
-
-      {/* Işık kaynağı merkezi */}
-      <Animated.View
-        style={[
-          styles.source,
-          sourceStyle,
-          {
-            backgroundColor: color,
-            shadowColor: color,
-          },
-        ]}
-      />
+        {/* Taşıyıcı stand */}
+        <View style={styles.stand} />
+      </View>
 
       {/* Etiket */}
       <View style={styles.label}>
         <Text style={styles.labelText}>
           {t('Işık Kaynağı', 'Light Source')}
         </Text>
-        <Text style={styles.valueText}>{wavelength} nm</Text>
+        <Text style={styles.wavelengthText}>{wavelength} nm</Text>
       </View>
     </View>
   );
@@ -125,44 +104,47 @@ const WaveSource: React.FC<WaveSourceProps> = ({ wavelength, isActive }) => {
 const styles = StyleSheet.create({
   container: {
     height: 160,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  sourceContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
-  stand: {
+  pulse: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     position: 'absolute',
-    left: -10,
-    width: 10,
-    height: 40,
-    backgroundColor: '#555',
-    borderTopRightRadius: 2,
-    borderBottomRightRadius: 2,
-  },
-  outerGlow: {
-    position: 'absolute',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
-  },
-  innerGlow: {
-    position: 'absolute',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 5,
   },
   source: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 5,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#3b82f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+  },
+  sourceInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#ffffff',
+    opacity: 0.5,
+  },
+  stand: {
+    position: 'absolute',
+    width: 1,
+    height: 180,
+    backgroundColor: '#9ca3af',
+    zIndex: -1,
   },
   label: {
     position: 'absolute',
@@ -174,7 +156,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#4b5563',
   },
-  valueText: {
+  wavelengthText: {
     fontSize: 12,
     fontFamily: 'monospace',
     color: '#6b7280',

@@ -46,7 +46,7 @@ type ExperimentRoute =
   | '/experiments/electric/magnetic-field'
   | '/experiments/modern/photoelectric';
 
-interface Experiment {
+export interface Experiment {
   id: string;
   title: string;
   titleEn: string;
@@ -59,7 +59,7 @@ interface Experiment {
 }
 
 // Sample experiments data
-const experiments: Experiment[] = [
+export const experiments: Experiment[] = [
   {
     id: '1',
     title: 'Basit Sarkaç',

@@ -1,12 +1,25 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Platform, Alert } from 'react-native';
-import { ChevronRight, CircleHelp as HelpCircle, Info, Languages, Moon, Settings as SettingsIcon, Volume2 } from 'lucide-react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Switch,
+  TouchableOpacity,
+  Platform,
+  Alert,
+} from 'react-native';
+import {
+  ChevronRight,
+  CircleHelp as HelpCircle,
+  Info,
+  Languages,
+  Volume2,
+} from 'lucide-react-native';
 import { useLanguage } from '../../components/LanguageContext';
 
 export default function SettingsScreen() {
-  const [darkMode, setDarkMode] = useState(false);
   const [soundEffects, setSoundEffects] = useState(true);
-  const [highQualityGraphics, setHighQualityGraphics] = useState(true);
   const [showHints, setShowHints] = useState(true);
   const { language, setLanguage, t } = useLanguage();
 
@@ -20,59 +33,31 @@ export default function SettingsScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>{t('Ayarlar', 'Settings')}</Text>
         <Text style={styles.subtitle}>
-          {t('Uygulama tercihlerinizi özelleştirin', 'Customize your application preferences')}
+          {t(
+            'Uygulama tercihlerinizi özelleştirin',
+            'Customize your application preferences'
+          )}
         </Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('Görünüm', 'Appearance')}</Text>
-        <View style={styles.settingItem}>
-          <View style={styles.settingInfo}>
-            <View style={styles.iconContainer}>
-              <Moon size={22} color="#3498db" />
-            </View>
-            <Text style={styles.settingLabel}>{t('Karanlık Mod', 'Dark Mode')}</Text>
-          </View>
-          <Switch
-            value={darkMode}
-            onValueChange={setDarkMode}
-            trackColor={{ false: '#e0e0e0', true: '#bde0fe' }}
-            thumbColor={darkMode ? '#3498db' : '#f4f3f4'}
-            ios_backgroundColor="#e0e0e0"
-          />
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('Ses ve Görüntü', 'Sound and Display')}</Text>
+        <Text style={styles.sectionTitle}>
+          {t('Ses ve Görüntü', 'Sound and Display')}
+        </Text>
         <View style={styles.settingItem}>
           <View style={styles.settingInfo}>
             <View style={styles.iconContainer}>
               <Volume2 size={22} color="#3498db" />
             </View>
-            <Text style={styles.settingLabel}>{t('Ses Efektleri', 'Sound Effects')}</Text>
+            <Text style={styles.settingLabel}>
+              {t('Ses Efektleri', 'Sound Effects')}
+            </Text>
           </View>
           <Switch
             value={soundEffects}
             onValueChange={setSoundEffects}
             trackColor={{ false: '#e0e0e0', true: '#bde0fe' }}
             thumbColor={soundEffects ? '#3498db' : '#f4f3f4'}
-            ios_backgroundColor="#e0e0e0"
-          />
-        </View>
-
-        <View style={styles.settingItem}>
-          <View style={styles.settingInfo}>
-            <View style={styles.iconContainer}>
-              <SettingsIcon size={22} color="#3498db" />
-            </View>
-            <Text style={styles.settingLabel}>{t('Yüksek Kalite Grafikler', 'High Quality Graphics')}</Text>
-          </View>
-          <Switch
-            value={highQualityGraphics}
-            onValueChange={setHighQualityGraphics}
-            trackColor={{ false: '#e0e0e0', true: '#bde0fe' }}
-            thumbColor={highQualityGraphics ? '#3498db' : '#f4f3f4'}
             ios_backgroundColor="#e0e0e0"
           />
         </View>
@@ -85,7 +70,9 @@ export default function SettingsScreen() {
             <View style={styles.iconContainer}>
               <HelpCircle size={22} color="#3498db" />
             </View>
-            <Text style={styles.settingLabel}>{t('İpuçlarını Göster', 'Show Hints')}</Text>
+            <Text style={styles.settingLabel}>
+              {t('İpuçlarını Göster', 'Show Hints')}
+            </Text>
           </View>
           <Switch
             value={showHints}
@@ -99,7 +86,7 @@ export default function SettingsScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('Dil', 'Language')}</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.settingItemWithArrow}
           onPress={handleLanguageChange}
         >
@@ -107,10 +94,14 @@ export default function SettingsScreen() {
             <View style={styles.iconContainer}>
               <Languages size={22} color="#3498db" />
             </View>
-            <Text style={styles.settingLabel}>{t('Uygulama Dili', 'Application Language')}</Text>
+            <Text style={styles.settingLabel}>
+              {t('Uygulama Dili', 'Application Language')}
+            </Text>
           </View>
           <View style={styles.settingAction}>
-            <Text style={styles.settingValue}>{language === 'tr' ? 'Türkçe' : 'English'}</Text>
+            <Text style={styles.settingValue}>
+              {language === 'tr' ? 'Türkçe' : 'English'}
+            </Text>
             <ChevronRight size={20} color="#7f8c8d" />
           </View>
         </TouchableOpacity>
@@ -123,15 +114,24 @@ export default function SettingsScreen() {
             <View style={styles.iconContainer}>
               <Info size={22} color="#3498db" />
             </View>
-            <Text style={styles.settingLabel}>{t('Uygulama Hakkında', 'About Application')}</Text>
+            <Text style={styles.settingLabel}>
+              {t('Uygulama Hakkında', 'About Application')}
+            </Text>
           </View>
           <ChevronRight size={20} color="#7f8c8d" />
         </TouchableOpacity>
       </View>
 
       <View style={styles.versionContainer}>
-        <Text style={styles.versionText}>{t('Sürüm 1.0.0', 'Version 1.0.0')}</Text>
-        <Text style={styles.copyrightText}>{t('© 2025 Sanal Fizik Laboratuvarı', '© 2025 Virtual Physics Laboratory')}</Text>
+        <Text style={styles.versionText}>
+          {t('Sürüm 1.0.0', 'Version 1.0.0')}
+        </Text>
+        <Text style={styles.copyrightText}>
+          {t(
+            '© 2025 Sanal Fizik Laboratuvarı',
+            '© 2025 Virtual Physics Laboratory'
+          )}
+        </Text>
       </View>
     </ScrollView>
   );

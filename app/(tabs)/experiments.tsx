@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
 } from 'react-native';
-import { Link, Href } from 'expo-router';
+import { Link, Href, useLocalSearchParams } from 'expo-router';
 import { ArrowRight, Search } from 'lucide-react-native';
 import { useLanguage } from '../../components/LanguageContext';
 
@@ -46,7 +46,7 @@ type ExperimentRoute =
   | '/experiments/electric/magnetic-field'
   | '/experiments/modern/photoelectric';
 
-interface Experiment {
+export interface Experiment {
   id: string;
   title: string;
   titleEn: string;
@@ -59,7 +59,7 @@ interface Experiment {
 }
 
 // Sample experiments data
-const experiments: Experiment[] = [
+export const experiments: Experiment[] = [
   {
     id: '1',
     title: 'Basit Sarkaç',
@@ -374,6 +374,7 @@ const categoryTranslations: Record<Category, string> = {
 };
 
 export default function ExperimentsScreen() {
+  const searchParams = useLocalSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>(
     'all'
@@ -381,6 +382,33 @@ export default function ExperimentsScreen() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<
     Difficulty | 'all'
   >('all');
+
+  // URL parametrelerinden kategori ve zorluk seviyesi bilgisini alarak state'i güncelle
+  useEffect(() => {
+    const categoryParam = searchParams.selectedCategory as string | undefined;
+    if (
+      categoryParam &&
+      (categoryParam === 'mechanics' ||
+        categoryParam === 'waves' ||
+        categoryParam === 'electricity' ||
+        categoryParam === 'basics' ||
+        categoryParam === 'modern')
+    ) {
+      setSelectedCategory(categoryParam as Category);
+    }
+
+    const difficultyParam = searchParams.selectedDifficulty as
+      | string
+      | undefined;
+    if (
+      difficultyParam &&
+      (difficultyParam === 'Başlangıç' ||
+        difficultyParam === 'Orta Seviye' ||
+        difficultyParam === 'İleri Seviye')
+    ) {
+      setSelectedDifficulty(difficultyParam as Difficulty);
+    }
+  }, [searchParams]);
 
   // Filter experiments based on search, category, and difficulty
   const filteredExperiments = experiments.filter((experiment) => {

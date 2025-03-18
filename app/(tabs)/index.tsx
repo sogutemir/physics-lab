@@ -1,37 +1,80 @@
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+} from 'react-native';
 import { Link } from 'expo-router';
 import { ArrowRight, Beaker } from 'lucide-react-native';
 import { useLanguage } from '../../components/LanguageContext';
+import { experiments, Experiment } from './experiments';
 
 export default function HomeScreen() {
   const { t } = useLanguage();
 
+  // Kategori bazında deney sayılarını hesaplama
+  const experimentCounts = {
+    mechanics: experiments.filter(
+      (exp: Experiment) => exp.category === 'mechanics'
+    ).length,
+    waves: experiments.filter((exp: Experiment) => exp.category === 'waves')
+      .length,
+    electricity: experiments.filter(
+      (exp: Experiment) => exp.category === 'electricity'
+    ).length,
+    basics: experiments.filter((exp: Experiment) => exp.category === 'basics')
+      .length,
+    modern: experiments.filter((exp: Experiment) => exp.category === 'modern')
+      .length,
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>{t('Sanal Fizik Laboratuvarı', 'Virtual Physics Laboratory')}</Text>
+        <Text style={styles.title}>
+          {t('Sanal Fizik Laboratuvarı', 'Virtual Physics Laboratory')}
+        </Text>
         <Text style={styles.subtitle}>
-          {t('Fizik deneylerini keşfedin ve öğrenin', 'Discover and learn physics experiments')}
+          {t(
+            'Fizik deneylerini keşfedin ve öğrenin',
+            'Discover and learn physics experiments'
+          )}
         </Text>
       </View>
 
       <Image
-        source={{ uri: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80' }}
+        source={{
+          uri: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
+        }}
         style={styles.heroImage}
       />
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('Popüler Deneyler', 'Popular Experiments')}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardsContainer}>
+        <Text style={styles.sectionTitle}>
+          {t('Popüler Deneyler', 'Popular Experiments')}
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.cardsContainer}
+        >
           <Link href="/experiments/mechanics/pendulum" asChild>
             <TouchableOpacity style={styles.card}>
               <View style={styles.cardIconContainer}>
                 <Beaker size={24} color="#3498db" />
               </View>
-              <Text style={styles.cardTitle}>{t('Basit Sarkaç', 'Simple Pendulum')}</Text>
-              <Text style={styles.cardDifficulty}>{t('Başlangıç', 'Beginner')}</Text>
+              <Text style={styles.cardTitle}>
+                {t('Basit Sarkaç', 'Simple Pendulum')}
+              </Text>
+              <Text style={styles.cardDifficulty}>
+                {t('Başlangıç', 'Beginner')}
+              </Text>
               <View style={styles.cardFooter}>
-                <Text style={styles.cardAction}>{t('Deneyi Başlat', 'Start Experiment')}</Text>
+                <Text style={styles.cardAction}>
+                  {t('Deneyi Başlat', 'Start Experiment')}
+                </Text>
                 <ArrowRight size={16} color="#3498db" />
               </View>
             </TouchableOpacity>
@@ -42,10 +85,16 @@ export default function HomeScreen() {
               <View style={styles.cardIconContainer}>
                 <Beaker size={24} color="#3498db" />
               </View>
-              <Text style={styles.cardTitle}>{t('Yay-Kütle Sistemi', 'Spring-Mass System')}</Text>
-              <Text style={styles.cardDifficulty}>{t('Başlangıç', 'Beginner')}</Text>
+              <Text style={styles.cardTitle}>
+                {t('Yay-Kütle Sistemi', 'Spring-Mass System')}
+              </Text>
+              <Text style={styles.cardDifficulty}>
+                {t('Başlangıç', 'Beginner')}
+              </Text>
               <View style={styles.cardFooter}>
-                <Text style={styles.cardAction}>{t('Deneyi Başlat', 'Start Experiment')}</Text>
+                <Text style={styles.cardAction}>
+                  {t('Deneyi Başlat', 'Start Experiment')}
+                </Text>
                 <ArrowRight size={16} color="#3498db" />
               </View>
             </TouchableOpacity>
@@ -56,10 +105,16 @@ export default function HomeScreen() {
               <View style={styles.cardIconContainer}>
                 <Beaker size={24} color="#3498db" />
               </View>
-              <Text style={styles.cardTitle}>{t('Çift Yarık Deneyi', 'Double Slit Experiment')}</Text>
-              <Text style={styles.cardDifficulty}>{t('Orta Seviye', 'Intermediate')}</Text>
+              <Text style={styles.cardTitle}>
+                {t('Çift Yarık Deneyi', 'Double Slit Experiment')}
+              </Text>
+              <Text style={styles.cardDifficulty}>
+                {t('Orta Seviye', 'Intermediate')}
+              </Text>
               <View style={styles.cardFooter}>
-                <Text style={styles.cardAction}>{t('Deneyi Başlat', 'Start Experiment')}</Text>
+                <Text style={styles.cardAction}>
+                  {t('Deneyi Başlat', 'Start Experiment')}
+                </Text>
                 <ArrowRight size={16} color="#3498db" />
               </View>
             </TouchableOpacity>
@@ -70,10 +125,36 @@ export default function HomeScreen() {
               <View style={styles.cardIconContainer}>
                 <Beaker size={24} color="#3498db" />
               </View>
-              <Text style={styles.cardTitle}>{t('Doppler Etkisi', 'Doppler Effect')}</Text>
-              <Text style={styles.cardDifficulty}>{t('Orta Seviye', 'Intermediate')}</Text>
+              <Text style={styles.cardTitle}>
+                {t('Doppler Etkisi', 'Doppler Effect')}
+              </Text>
+              <Text style={styles.cardDifficulty}>
+                {t('Orta Seviye', 'Intermediate')}
+              </Text>
               <View style={styles.cardFooter}>
-                <Text style={styles.cardAction}>{t('Deneyi Başlat', 'Start Experiment')}</Text>
+                <Text style={styles.cardAction}>
+                  {t('Deneyi Başlat', 'Start Experiment')}
+                </Text>
+                <ArrowRight size={16} color="#3498db" />
+              </View>
+            </TouchableOpacity>
+          </Link>
+
+          <Link href="/experiments/modern/photoelectric" asChild>
+            <TouchableOpacity style={styles.card}>
+              <View style={styles.cardIconContainer}>
+                <Beaker size={24} color="#3498db" />
+              </View>
+              <Text style={styles.cardTitle}>
+                {t('Fotoelektrik Olay', 'Photoelectric Effect')}
+              </Text>
+              <Text style={styles.cardDifficulty}>
+                {t('Orta Seviye', 'Intermediate')}
+              </Text>
+              <View style={styles.cardFooter}>
+                <Text style={styles.cardAction}>
+                  {t('Deneyi Başlat', 'Start Experiment')}
+                </Text>
                 <ArrowRight size={16} color="#3498db" />
               </View>
             </TouchableOpacity>
@@ -84,10 +165,16 @@ export default function HomeScreen() {
               <View style={styles.cardIconContainer}>
                 <Beaker size={24} color="#3498db" />
               </View>
-              <Text style={styles.cardTitle}>{t('Coriolis Etkisi', 'Coriolis Effect')}</Text>
-              <Text style={styles.cardDifficulty}>{t('İleri Seviye', 'Advanced')}</Text>
+              <Text style={styles.cardTitle}>
+                {t('Coriolis Etkisi', 'Coriolis Effect')}
+              </Text>
+              <Text style={styles.cardDifficulty}>
+                {t('İleri Seviye', 'Advanced')}
+              </Text>
               <View style={styles.cardFooter}>
-                <Text style={styles.cardAction}>{t('Deneyi Başlat', 'Start Experiment')}</Text>
+                <Text style={styles.cardAction}>
+                  {t('Deneyi Başlat', 'Start Experiment')}
+                </Text>
                 <ArrowRight size={16} color="#3498db" />
               </View>
             </TouchableOpacity>
@@ -96,40 +183,119 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('Deney Kategorileri', 'Experiment Categories')}</Text>
+        <Text style={styles.sectionTitle}>
+          {t('Deney Kategorileri', 'Experiment Categories')}
+        </Text>
         <View style={styles.categoriesContainer}>
-          <Link href="/experiments?category=mechanics" asChild>
+          <Link
+            href={{
+              pathname: '/(tabs)/experiments',
+              params: { selectedCategory: 'mechanics' },
+            }}
+            asChild
+          >
             <TouchableOpacity style={styles.categoryCard}>
-              <Text style={styles.categoryTitle}>{t('Mekanik', 'Mechanics')}</Text>
-              <Text style={styles.categoryCount}>{t('10 deney', '10 experiments')}</Text>
+              <Text style={styles.categoryTitle}>
+                {t('Mekanik', 'Mechanics')}
+              </Text>
+              <Text style={styles.categoryCount}>
+                {t(
+                  `${experimentCounts.mechanics} deney`,
+                  `${experimentCounts.mechanics} experiments`
+                )}
+              </Text>
             </TouchableOpacity>
           </Link>
-          
-          <Link href="/experiments?category=waves" asChild>
+
+          <Link
+            href={{
+              pathname: '/(tabs)/experiments',
+              params: { selectedCategory: 'waves' },
+            }}
+            asChild
+          >
             <TouchableOpacity style={styles.categoryCard}>
-              <Text style={styles.categoryTitle}>{t('Dalga ve Optik', 'Waves and Optics')}</Text>
-              <Text style={styles.categoryCount}>{t('5 deney', '5 experiments')}</Text>
+              <Text style={styles.categoryTitle}>
+                {t('Dalga ve Optik', 'Waves and Optics')}
+              </Text>
+              <Text style={styles.categoryCount}>
+                {t(
+                  `${experimentCounts.waves} deney`,
+                  `${experimentCounts.waves} experiments`
+                )}
+              </Text>
             </TouchableOpacity>
           </Link>
-          
-          <Link href="/experiments?category=electricity" asChild>
+
+          <Link
+            href={{
+              pathname: '/(tabs)/experiments',
+              params: { selectedCategory: 'electricity' },
+            }}
+            asChild
+          >
             <TouchableOpacity style={styles.categoryCard}>
-              <Text style={styles.categoryTitle}>{t('Elektrik ve Manyetizma', 'Electricity and Magnetism')}</Text>
-              <Text style={styles.categoryCount}>{t('3 deney', '3 experiments')}</Text>
+              <Text style={styles.categoryTitle}>
+                {t('Elektrik ve Manyetizma', 'Electricity and Magnetism')}
+              </Text>
+              <Text style={styles.categoryCount}>
+                {t(
+                  `${experimentCounts.electricity} deney`,
+                  `${experimentCounts.electricity} experiments`
+                )}
+              </Text>
             </TouchableOpacity>
           </Link>
-          
-          <Link href="/experiments?category=basics" asChild>
+
+          <Link
+            href={{
+              pathname: '/(tabs)/experiments',
+              params: { selectedCategory: 'basics' },
+            }}
+            asChild
+          >
             <TouchableOpacity style={styles.categoryCard}>
-              <Text style={styles.categoryTitle}>{t('Temel Kavramlar', 'Basic Concepts')}</Text>
-              <Text style={styles.categoryCount}>{t('3 deney', '3 experiments')}</Text>
+              <Text style={styles.categoryTitle}>
+                {t('Temel Kavramlar', 'Basic Concepts')}
+              </Text>
+              <Text style={styles.categoryCount}>
+                {t(
+                  `${experimentCounts.basics} deney`,
+                  `${experimentCounts.basics} experiments`
+                )}
+              </Text>
+            </TouchableOpacity>
+          </Link>
+
+          <Link
+            href={{
+              pathname: '/(tabs)/experiments',
+              params: { selectedCategory: 'modern' },
+            }}
+            asChild
+          >
+            <TouchableOpacity style={styles.categoryCard}>
+              <Text style={styles.categoryTitle}>
+                {t('Modern Fizik', 'Modern Physics')}
+              </Text>
+              <Text style={styles.categoryCount}>
+                {t(
+                  `${experimentCounts.modern} deney`,
+                  `${experimentCounts.modern} experiments`
+                )}
+              </Text>
             </TouchableOpacity>
           </Link>
         </View>
       </View>
 
       <View style={styles.infoSection}>
-        <Text style={styles.infoTitle}>{t('Sanal Fizik Laboratuvarı Hakkında', 'About Virtual Physics Laboratory')}</Text>
+        <Text style={styles.infoTitle}>
+          {t(
+            'Sanal Fizik Laboratuvarı Hakkında',
+            'About Virtual Physics Laboratory'
+          )}
+        </Text>
         <Text style={styles.infoText}>
           {t(
             'Bu uygulama, fizik deneylerini sanal ortamda simüle eden interaktif bir eğitim platformudur. Kayıt gerektirmeden anında erişim sağlayabilir, gerçek zamanlı simülasyonlar ve animasyonlar ile fizik kavramlarını pratik yaparak öğrenebilirsiniz.',

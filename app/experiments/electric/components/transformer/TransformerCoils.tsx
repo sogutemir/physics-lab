@@ -178,7 +178,7 @@ const TransformerCoils: React.FC<TransformerCoilsProps> = ({
         {Array.from({ length: visibleSecondaryTurns }).map((_, i) => (
           <AnimatedRect
             key={`secondary-${i}`}
-            x={180} // Orta kol üzerinde, tam ortalanmış
+            x={230} // Orta kol üzerinde, biraz daha sağa çekildi (180'den 195'e)
             y={90 + i * 7}
             width={40} // Nüveyi tamamen saracak genişlikte
             height={5}

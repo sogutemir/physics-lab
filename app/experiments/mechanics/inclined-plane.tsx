@@ -438,6 +438,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     width: '100%',
     marginBottom: 16,
+    height: 300,
   },
   controls: {
     flex: 1,

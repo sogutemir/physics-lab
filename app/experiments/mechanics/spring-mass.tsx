@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Platform } from "react-native";
+import { View, Text, StyleSheet, Platform, ScrollView } from "react-native";
 import Slider from "@react-native-community/slider";
 import Svg, { Line, Circle, Path, Rect } from "react-native-svg";
 import ExperimentLayout from "../../../components/ExperimentLayout";
@@ -177,29 +177,29 @@ export default function SpringMassExperiment() {
 
   // Deney açıklamaları
   const description = `
-    Yay-Kütle sistemi, basit harmonik hareketin temel bir örneğidir. Bu deneyde, bir yaya bağlı kütlenin 
+    Yay-Kütle sistemi, basit harmonik hareketin temel bir örneğidir. Bu deneyde, bir yaya bağlı kütlenin
     salınım hareketini inceleyebilirsiniz. Sistemin davranışını etkileyen parametreler:
-    
+
     - Kütle: Sistemin eylemsizliğini belirler
     - Yay sabiti: Yayın sertliğini belirler
     - Sönümleme: Sistemdeki enerji kaybını temsil eder
     - Genlik: İlk çekme mesafesini belirler
-    
-    Sistemin toplam enerjisi, kinetik ve potansiyel enerjinin toplamıdır. Sönümleme olmadığında 
+
+    Sistemin toplam enerjisi, kinetik ve potansiyel enerjinin toplamıdır. Sönümleme olmadığında
     toplam enerji korunur.
   `;
 
   const descriptionEn = `
-    The Spring-Mass system is a fundamental example of simple harmonic motion. In this experiment, 
-    you can study the oscillatory motion of a mass attached to a spring. Parameters affecting the 
+    The Spring-Mass system is a fundamental example of simple harmonic motion. In this experiment,
+    you can study the oscillatory motion of a mass attached to a spring. Parameters affecting the
     system's behavior:
-    
+
     - Mass: Determines the system's inertia
     - Spring constant: Determines the spring's stiffness
     - Damping: Represents energy loss in the system
     - Amplitude: Sets the initial displacement
-    
-    The total energy of the system is the sum of kinetic and potential energies. Without damping, 
+
+    The total energy of the system is the sum of kinetic and potential energies. Without damping,
     total energy is conserved.
   `;
 
@@ -215,145 +215,159 @@ export default function SpringMassExperiment() {
       onToggleSimulation={handleToggleSimulation}
       onReset={handleReset}
     >
-      <View style={styles.container}>
-        <View style={styles.simulation}>
-          <Svg
-            width="100%"
-            height="100%"
-            viewBox="0 0 300 400"
-            preserveAspectRatio="xMidYMid meet"
-          >
-            {/* Sabit tavan */}
-            <Rect
-              x={300 / 2 - 50}
-              y={CONSTANTS.TOP_MARGIN - 10}
-              width={100}
-              height={10}
-              fill="#2c3e50"
-              stroke="#fff"
-              strokeWidth={1}
-            />
-
-            {/* Yay */}
-            <Path
-              d={renderSpringPath()}
-              stroke="#3498db"
-              strokeWidth={2.5}
-              fill="none"
-            />
-
-            {/* Kütle */}
-            <Circle
-              cx={300 / 2}
-              cy={CONSTANTS.TOP_MARGIN + CONSTANTS.BASE_SPRING_LENGTH + state.baseLength * 200 + state.position * 200}
-              r={20 + state.mass * 10}
-              fill="#e74c3c"
-              stroke="#fff"
-              strokeWidth={2}
-            />
-          </Svg>
-        </View>
-
-        <View style={styles.controls}>
-          <View style={styles.sliders}>
-            <View style={styles.sliderRow}>
-              <Text style={styles.sliderLabel}>
-                Yay Uzunluğu: {state.baseLength.toFixed(2)} m
-              </Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={CONSTANTS.MIN_BASE_LENGTH}
-                maximumValue={CONSTANTS.MAX_BASE_LENGTH}
-                value={state.baseLength}
-                onValueChange={(value) => setState(prev => ({ ...prev, baseLength: value }))}
-                minimumTrackTintColor="#3498db"
-                maximumTrackTintColor="#bdc3c7"
-                thumbTintColor="#3498db"
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.container}>
+          <View style={styles.simulation}>
+            <Svg
+              width={Platform.OS === 'web' ? '100%' : '100%'} // Web'de genişliği %100 yap
+              height={Platform.OS === 'web' ? '400px' : '100%'} // Web'de yüksekliği sabit tut
+              viewBox="0 0 600 400" // viewBox değerini içeriğe uygun şekilde ayarla
+              preserveAspectRatio="xMidYMid meet" // Oranları koru
+            >
+              {/* Sabit tavan */}
+              <Rect
+                x={300 / 2 - 50}
+                y={CONSTANTS.TOP_MARGIN - 10}
+                width={100}
+                height={10}
+                fill="#2c3e50"
+                stroke="#fff"
+                strokeWidth={1}
               />
-            </View>
 
-            <View style={styles.sliderRow}>
-              <Text style={styles.sliderLabel}>
-                Kütle: {state.mass.toFixed(1)} kg
-              </Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={CONSTANTS.MIN_MASS}
-                maximumValue={CONSTANTS.MAX_MASS}
-                value={state.mass}
-                onValueChange={(value) => setState(prev => ({ ...prev, mass: value }))}
-                minimumTrackTintColor="#3498db"
-                maximumTrackTintColor="#bdc3c7"
-                thumbTintColor="#3498db"
+              {/* Yay */}
+              <Path
+                d={renderSpringPath()}
+                stroke="#3498db"
+                strokeWidth={2.5}
+                fill="none"
               />
-            </View>
 
-            <View style={styles.sliderRow}>
-              <Text style={styles.sliderLabel}>
-                Yay Sabiti: {state.springConstant.toFixed(1)} N/m
-              </Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={CONSTANTS.MIN_SPRING_CONSTANT}
-                maximumValue={CONSTANTS.MAX_SPRING_CONSTANT}
-                value={state.springConstant}
-                onValueChange={(value) => setState(prev => ({ ...prev, springConstant: value }))}
-                minimumTrackTintColor="#3498db"
-                maximumTrackTintColor="#bdc3c7"
-                thumbTintColor="#3498db"
+              {/* Kütle */}
+              <Circle
+                cx={300 / 2}
+                cy={CONSTANTS.TOP_MARGIN + CONSTANTS.BASE_SPRING_LENGTH + state.baseLength * 200 + state.position * 200}
+                r={20 + state.mass * 10}
+                fill="#e74c3c"
+                stroke="#fff"
+                strokeWidth={2}
               />
-            </View>
-
-            <View style={styles.sliderRow}>
-              <Text style={styles.sliderLabel}>
-                Sönümleme: {state.damping.toFixed(2)}
-              </Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={CONSTANTS.MIN_DAMPING}
-                maximumValue={CONSTANTS.MAX_DAMPING}
-                value={state.damping}
-                onValueChange={(value) => setState(prev => ({ ...prev, damping: value }))}
-                minimumTrackTintColor="#3498db"
-                maximumTrackTintColor="#bdc3c7"
-                thumbTintColor="#3498db"
-              />
-            </View>
-
-            <View style={styles.sliderRow}>
-              <Text style={styles.sliderLabel}>
-                Genlik: {state.amplitude.toFixed(2)} m
-              </Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={CONSTANTS.MIN_AMPLITUDE}
-                maximumValue={CONSTANTS.MAX_AMPLITUDE}
-                value={state.amplitude}
-                onValueChange={(value) => setState(prev => ({ ...prev, amplitude: value }))}
-                minimumTrackTintColor="#3498db"
-                maximumTrackTintColor="#bdc3c7"
-                thumbTintColor="#3498db"
-              />
-            </View>
+            </Svg>
           </View>
 
-          <View style={styles.info}>
-            <View style={styles.infoContainer}>
-              <Text style={styles.infoItem}>Zaman: {state.time.toFixed(2)} s</Text>
-              <Text style={styles.infoItem}>Konum: {state.position.toFixed(3)} m</Text>
-              <Text style={styles.infoItem}>Hız: {state.velocity.toFixed(2)} m/s</Text>
-              <Text style={styles.infoItem}>Kinetik Enerji: {state.kineticEnergy.toFixed(2)} J</Text>
-              <Text style={styles.infoItem}>Potansiyel Enerji: {state.potentialEnergy.toFixed(2)} J</Text>
-              <Text style={styles.infoItem}>Toplam Enerji: {state.totalEnergy.toFixed(2)} J</Text>
+          <View style={styles.controls}>
+            <View style={styles.sliders}>
+              <View style={styles.sliderRow}>
+                <Text style={styles.sliderLabel}>
+                  Yay Uzunluğu: {state.baseLength.toFixed(2)} m
+                </Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={CONSTANTS.MIN_BASE_LENGTH}
+                  maximumValue={CONSTANTS.MAX_BASE_LENGTH}
+                  value={state.baseLength}
+                  onValueChange={(value) => setState(prev => ({ ...prev, baseLength: value }))}
+                  minimumTrackTintColor="#3498db"
+                  maximumTrackTintColor="#bdc3c7"
+                  thumbTintColor="#3498db"
+                />
+              </View>
+
+              <View style={styles.sliderRow}>
+                <Text style={styles.sliderLabel}>
+                  Kütle: {state.mass.toFixed(1)} kg
+                </Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={CONSTANTS.MIN_MASS}
+                  maximumValue={CONSTANTS.MAX_MASS}
+                  value={state.mass}
+                  onValueChange={(value) => setState(prev => ({ ...prev, mass: value }))}
+                  minimumTrackTintColor="#3498db"
+                  maximumTrackTintColor="#bdc3c7"
+                  thumbTintColor="#3498db"
+                />
+              </View>
+
+              <View style={styles.sliderRow}>
+                <Text style={styles.sliderLabel}>
+                  Yay Sabiti: {state.springConstant.toFixed(1)} N/m
+                </Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={CONSTANTS.MIN_SPRING_CONSTANT}
+                  maximumValue={CONSTANTS.MAX_SPRING_CONSTANT}
+                  value={state.springConstant}
+                  onValueChange={(value) => setState(prev => ({ ...prev, springConstant: value }))}
+                  minimumTrackTintColor="#3498db"
+                  maximumTrackTintColor="#bdc3c7"
+                  thumbTintColor="#3498db"
+                />
+              </View>
+
+              <View style={styles.sliderRow}>
+                <Text style={styles.sliderLabel}>
+                  Sönümleme: {state.damping.toFixed(2)}
+                </Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={CONSTANTS.MIN_DAMPING}
+                  maximumValue={CONSTANTS.MAX_DAMPING}
+                  value={state.damping}
+                  onValueChange={(value) => setState(prev => ({ ...prev, damping: value }))}
+                  minimumTrackTintColor="#3498db"
+                  maximumTrackTintColor="#bdc3c7"
+                  thumbTintColor="#3498db"
+                />
+              </View>
+
+              <View style={styles.sliderRow}>
+                <Text style={styles.sliderLabel}>
+                  Genlik: {state.amplitude.toFixed(2)} m
+                </Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={CONSTANTS.MIN_AMPLITUDE}
+                  maximumValue={CONSTANTS.MAX_AMPLITUDE}
+                  value={state.amplitude}
+                  onValueChange={(value) => setState(prev => ({ ...prev, amplitude: value }))}
+                  minimumTrackTintColor="#3498db"
+                  maximumTrackTintColor="#bdc3c7"
+                  thumbTintColor="#3498db"
+                />
+              </View>
+            </View>
+
+            <View style={styles.info}>
+              <View style={styles.infoContainer}>
+                <Text style={styles.infoItem}>Zaman: {state.time.toFixed(2)} s</Text>
+                <Text style={styles.infoItem}>Konum: {state.position.toFixed(3)} m</Text>
+                <Text style={styles.infoItem}>Hız: {state.velocity.toFixed(2)} m/s</Text>
+                <Text style={styles.infoItem}>Kinetik Enerji: {state.kineticEnergy.toFixed(2)} J</Text>
+                <Text style={styles.infoItem}>Potansiyel Enerji: {state.potentialEnergy.toFixed(2)} J</Text>
+                <Text style={styles.infoItem}>Toplam Enerji: {state.totalEnergy.toFixed(2)} J</Text>
+              </View>
             </View>
           </View>
         </View>
-      </View>
+      </ScrollView>
     </ExperimentLayout>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    paddingBottom: Platform.OS === 'web' ? 50 : 200, // Platforma özgü stil
+  },
   container: {
     flex: 1,
     padding: 10,
@@ -367,6 +381,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     width: '100%',
     marginBottom: 10,
+    height: 300,
   },
   controls: {
     flex: 1,

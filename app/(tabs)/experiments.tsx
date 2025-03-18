@@ -205,13 +205,15 @@ const experiments: Experiment[] = [
   {
     id: '14',
     title: 'Çift Yarık Deneyi',
-    titleEn: 'Double Slit Experiment',
+    titleEn: 'Double-Slit Experiment',
     category: 'waves',
     difficulty: 'Orta Seviye',
     difficultyEn: 'Intermediate',
-    description: 'Işığın dalga doğası ve girişim',
-    descriptionEn: 'Wave nature of light and interference',
-    route: '/experiments/waves/double-slit' as any,
+    description:
+      'Bu interaktif deneyde ışığın dalga doğasını gözlemleyin. Işığın iki yarıktan geçişi sırasında oluşan girişim desenleri, dalga özelliklerini açıkça gösterir.',
+    descriptionEn:
+      'Observe the wave nature of light in this interactive experiment. The interference patterns formed when light passes through two slits clearly demonstrate its wave properties.',
+    route: '/experiments/waves/double-slit',
   },
   {
     id: '15',

@@ -14,7 +14,7 @@ import { useLanguage } from '../../components/LanguageContext';
 // Define experiment types
 type Difficulty = 'Başlangıç' | 'Orta Seviye' | 'İleri Seviye';
 type DifficultyEn = 'Beginner' | 'Intermediate' | 'Advanced';
-type Category = 'mechanics' | 'waves' | 'electricity' | 'basics';
+type Category = 'mechanics' | 'waves' | 'electricity' | 'basics' | 'modern';
 
 type ExperimentRoute =
   | '/experiments/mechanics/pendulum'
@@ -43,7 +43,8 @@ type ExperimentRoute =
   | '/experiments/basics/coriolis-effect'
   | '/experiments/basics/buoyancy'
   | '/experiments/basics/pressure'
-  | '/experiments/electric/magnetic-field';
+  | '/experiments/electric/magnetic-field'
+  | '/experiments/modern/photoelectric';
 
 interface Experiment {
   id: string;
@@ -381,6 +382,19 @@ const experiments: Experiment[] = [
       'Interactively observe accelerated motion, velocity, and position changes. Experimentally explore kinematic equations.',
     route: '/experiments/basics/acceleration' as any,
   },
+  {
+    id: '29',
+    title: 'Fotoelektrik Olay',
+    titleEn: 'Photoelectric Effect',
+    category: 'modern',
+    difficulty: 'Orta Seviye',
+    difficultyEn: 'Intermediate',
+    description:
+      'Bu interaktif deneyde ışığın parçacık doğasını gözlemleyin. Metal yüzeydeki elektronların farklı dalga boylarındaki ışıkla etkileşimini inceleyerek, kuantum fiziğinin temel ilkelerini keşfedin.',
+    descriptionEn:
+      'In this interactive experiment, observe the particle nature of light. Explore the fundamental principles of quantum physics by examining the interaction of electrons on a metal surface with light of different wavelengths.',
+    route: '/experiments/modern/photoelectric' as any,
+  },
 ];
 
 // Category translations for display
@@ -389,6 +403,7 @@ const categoryTranslations: Record<Category, string> = {
   waves: 'Dalga ve Optik',
   electricity: 'Elektrik ve Manyetizma',
   basics: 'Temel Kavramlar',
+  modern: 'Modern Fizik',
 };
 
 export default function ExperimentsScreen() {

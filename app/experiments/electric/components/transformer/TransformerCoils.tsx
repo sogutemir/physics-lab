@@ -5,8 +5,8 @@ import Animated, {
   useSharedValue,
   useAnimatedProps,
   withRepeat,
-  withTiming,
   withSequence,
+  withTiming,
   Easing,
 } from 'react-native-reanimated';
 
@@ -96,17 +96,75 @@ const TransformerCoils: React.FC<TransformerCoilsProps> = ({
     opacity: secondaryOpacity.value,
   }));
 
+  // Toroid nüve için bobinler - halkanın tam üzerinde
+  const renderToroidCoils = () => (
+    <G>
+      {/* Primer bobin (mavi) - toroid nüvesinin üst yarısı */}
+      <G>
+        {Array.from({ length: visiblePrimaryTurns }).map((_, i) => {
+          // Sarımları yay şeklinde dağıtmak için açı hesaplaması
+          // -135 dereceden -45 dereceye (üst yarıda)
+          const angle = -135 + (i * 90) / (visiblePrimaryTurns - 1 || 1);
+          const radians = (angle * Math.PI) / 180;
+
+          // ÖNEMLİ: Radius değeri tam olarak nüvenin dış ve iç yarıçapı arasında olmalı
+          // Toroid nüve 40 (iç) ve 80 (dış) yarıçaplara sahip, bu nedenle 60 kullanıyoruz
+          const radius = 60;
+          const x = 200 + radius * Math.cos(radians);
+          const y = 120 + radius * Math.sin(radians);
+
+          return (
+            <AnimatedCircle
+              key={`primary-${i}`}
+              cx={x}
+              cy={y}
+              r={5}
+              fill="#3b82f6" // Mavi renk
+              animatedProps={primaryAnimatedProps}
+            />
+          );
+        })}
+      </G>
+
+      {/* Sekonder bobin (kırmızı) - toroid nüvesinin alt yarısı */}
+      <G>
+        {Array.from({ length: visibleSecondaryTurns }).map((_, i) => {
+          // Sarımları yay şeklinde dağıtmak için açı hesaplaması
+          // 45 dereceden 135 dereceye (alt yarıda)
+          const angle = 45 + (i * 90) / (visibleSecondaryTurns - 1 || 1);
+          const radians = (angle * Math.PI) / 180;
+
+          // ÖNEMLİ: Radius değeri tam olarak nüvenin dış ve iç yarıçapı arasında olmalı
+          const radius = 60;
+          const x = 200 + radius * Math.cos(radians);
+          const y = 120 + radius * Math.sin(radians);
+
+          return (
+            <AnimatedCircle
+              key={`secondary-${i}`}
+              cx={x}
+              cy={y}
+              r={5}
+              fill="#ef4444" // Kırmızı renk
+              animatedProps={secondaryAnimatedProps}
+            />
+          );
+        })}
+      </G>
+    </G>
+  );
+
   // E tipi nüve için bobinler
   const renderECoreCoils = () => (
     <G>
-      {/* Primer bobin */}
+      {/* Primer bobin - sol kol üzerinde */}
       <G>
         {Array.from({ length: visiblePrimaryTurns }).map((_, i) => (
           <AnimatedRect
             key={`primary-${i}`}
-            x={130}
+            x={130} // Sol kol üzerinde, tam ortalanmış
             y={90 + i * 7}
-            width={10}
+            width={40} // Nüveyi tamamen saracak genişlikte
             height={5}
             rx={2}
             fill="#ef4444"
@@ -115,14 +173,14 @@ const TransformerCoils: React.FC<TransformerCoilsProps> = ({
         ))}
       </G>
 
-      {/* Sekonder bobin */}
+      {/* Sekonder bobin - orta kol üzerinde */}
       <G>
         {Array.from({ length: visibleSecondaryTurns }).map((_, i) => (
           <AnimatedRect
             key={`secondary-${i}`}
-            x={260}
+            x={180} // Orta kol üzerinde, tam ortalanmış
             y={90 + i * 7}
-            width={10}
+            width={40} // Nüveyi tamamen saracak genişlikte
             height={5}
             rx={2}
             fill="#3b82f6"
@@ -136,14 +194,14 @@ const TransformerCoils: React.FC<TransformerCoilsProps> = ({
   // U tipi nüve için bobinler
   const renderUCoreCoils = () => (
     <G>
-      {/* Primer bobin */}
+      {/* Primer bobin - sol U üzerinde */}
       <G>
         {Array.from({ length: visiblePrimaryTurns }).map((_, i) => (
           <AnimatedRect
             key={`primary-${i}`}
-            x={225}
+            x={125} // Sol U nüvesinin üzerinde, tam ortalanmış
             y={70 + i * 8}
-            width={50}
+            width={75} // Nüveyi tamamen saracak genişlikte
             height={6}
             rx={3}
             fill="#ef4444"
@@ -152,67 +210,20 @@ const TransformerCoils: React.FC<TransformerCoilsProps> = ({
         ))}
       </G>
 
-      {/* Sekonder bobin */}
+      {/* Sekonder bobin - sağ U üzerinde */}
       <G>
         {Array.from({ length: visibleSecondaryTurns }).map((_, i) => (
           <AnimatedRect
             key={`secondary-${i}`}
-            x={225}
-            y={160 - i * 8}
-            width={50}
+            x={300} // Sağ U nüvesinin üzerinde, tam ortalanmış
+            y={70 + i * 8}
+            width={75} // Nüveyi tamamen saracak genişlikte
             height={6}
             rx={3}
             fill="#3b82f6"
             animatedProps={secondaryAnimatedProps}
           />
         ))}
-      </G>
-    </G>
-  );
-
-  // Toroid nüve için bobinler
-  const renderToroidCoils = () => (
-    <G>
-      {/* Primer bobin */}
-      <G>
-        {Array.from({ length: visiblePrimaryTurns }).map((_, i) => {
-          const angle = (i * 15) % 360;
-          const radians = (angle * Math.PI) / 180;
-          const x = 200 + 60 * Math.cos(radians);
-          const y = 120 + 60 * Math.sin(radians);
-
-          return (
-            <AnimatedCircle
-              key={`primary-${i}`}
-              cx={x}
-              cy={y}
-              r={5}
-              fill="#ef4444"
-              animatedProps={primaryAnimatedProps}
-            />
-          );
-        })}
-      </G>
-
-      {/* Sekonder bobin */}
-      <G>
-        {Array.from({ length: visibleSecondaryTurns }).map((_, i) => {
-          const angle = (i * 15 + 180) % 360;
-          const radians = (angle * Math.PI) / 180;
-          const x = 200 + 60 * Math.cos(radians);
-          const y = 120 + 60 * Math.sin(radians);
-
-          return (
-            <AnimatedCircle
-              key={`secondary-${i}`}
-              cx={x}
-              cy={y}
-              r={5}
-              fill="#3b82f6"
-              animatedProps={secondaryAnimatedProps}
-            />
-          );
-        })}
       </G>
     </G>
   );
@@ -233,6 +244,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+    zIndex: 10, // Nüve üzerinde gösterilmesi için zIndex eklendi
   },
 });
 

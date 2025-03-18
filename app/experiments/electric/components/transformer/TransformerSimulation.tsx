@@ -229,22 +229,20 @@ const TransformerSimulation: React.FC<TransformerSimulationProps> = ({
             {/* Transformatör Görünümü */}
             <View style={styles.transformerView}>
               <View style={styles.svgContainer}>
-                <View style={styles.overlaySvg}>
-                  <TransformerCore
-                    type={coreType}
-                    magneticFieldVisible={showMagneticField && isRunning}
-                    magneticFieldStrength={
-                      isRunning ? results.magneticFieldStrength : 0
-                    }
-                    materialPermeability={materialPermeability}
-                  />
-                  <TransformerCoils
-                    coreType={coreType}
-                    primaryTurns={primaryTurns}
-                    secondaryTurns={secondaryTurns}
-                    primaryCurrent={isRunning ? results.primaryCurrent : 0}
-                  />
-                </View>
+                <TransformerCore
+                  type={coreType}
+                  magneticFieldVisible={showMagneticField && isRunning}
+                  magneticFieldStrength={
+                    isRunning ? results.magneticFieldStrength : 0
+                  }
+                  materialPermeability={materialPermeability}
+                />
+                <TransformerCoils
+                  coreType={coreType}
+                  primaryTurns={primaryTurns}
+                  secondaryTurns={secondaryTurns}
+                  primaryCurrent={isRunning ? results.primaryCurrent : 0}
+                />
               </View>
             </View>
 

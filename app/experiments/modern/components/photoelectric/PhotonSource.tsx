@@ -43,7 +43,7 @@ const PhotonSource: React.FC<PhotonSourceProps> = ({
     }
 
     // Işık aktifse animasyonu başlat
-    if (isActive && photonCount > 0) {
+    if (isActive && photonCount > 0 && photonAnimValues.current) {
       // Tüm fotonlar için animasyon oluştur
       const animations = photonAnimValues.current.map((anim, index) => {
         // Animasyonu başa al
@@ -106,9 +106,11 @@ const PhotonSource: React.FC<PhotonSourceProps> = ({
 
       {/* Işın demetleri */}
       {isActive &&
+        photonAnimValues.current &&
+        photonAnimValues.current.length > 0 &&
         photonAnimValues.current.map((anim, index) => (
           <Animated.View
-            key={index}
+            key={`photon-${index}`}
             style={[
               styles.photon,
               {

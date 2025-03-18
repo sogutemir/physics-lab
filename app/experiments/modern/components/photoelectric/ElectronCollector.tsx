@@ -67,15 +67,37 @@ const ElectronCollector: React.FC<ElectronCollectorProps> = ({
     };
   }, [current, glowAnimation]);
 
-  const shadowRadius = glowAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [5, 15],
-  });
+  // Animasyon değerleri için interpolasyonlar
+  const getInterpolateValue = (inputRange: number[], outputRange: number[]) => {
+    try {
+      return glowAnimation.interpolate({
+        inputRange,
+        outputRange,
+      });
+    } catch (error) {
+      console.log('Interpolation error:', error);
+      return 0;
+    }
+  };
 
-  const shadowOpacity = glowAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.2, 0.8],
-  });
+  // Sadece current > 0 olduğunda scale transform'u oluştur
+  const getTransform = () => {
+    if (current <= 0) return [];
+
+    try {
+      return [
+        {
+          scale: glowAnimation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [1, 1.03],
+          }),
+        },
+      ];
+    } catch (error) {
+      console.log('Transform error:', error);
+      return [];
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -88,17 +110,7 @@ const ElectronCollector: React.FC<ElectronCollectorProps> = ({
             shadowColor: current > 0 ? '#4d9fff' : 'transparent',
             shadowRadius: current > 0 ? 8 + glowIntensity * 12 : 0,
             shadowOpacity: current > 0 ? glowIntensity * 0.8 : 0,
-            transform:
-              current > 0
-                ? [
-                    {
-                      scale: glowAnimation.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [1, 1.03],
-                      }),
-                    },
-                  ]
-                : undefined,
+            transform: getTransform(),
           },
         ]}
       >
@@ -111,10 +123,7 @@ const ElectronCollector: React.FC<ElectronCollectorProps> = ({
           style={[
             styles.currentIndicator,
             {
-              opacity: glowAnimation.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.8, 1],
-              }),
+              opacity: getInterpolateValue([0, 1], [0.8, 1]),
             },
           ]}
         >
@@ -128,16 +137,10 @@ const ElectronCollector: React.FC<ElectronCollectorProps> = ({
           style={[
             styles.electronEffect,
             {
-              opacity: glowAnimation.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.1, glowIntensity * 0.5],
-              }),
+              opacity: getInterpolateValue([0, 1], [0.1, glowIntensity * 0.5]),
               transform: [
                 {
-                  scale: glowAnimation.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.8, 1.2],
-                  }),
+                  scale: getInterpolateValue([0, 1], [0.8, 1.2]),
                 },
               ],
             },

@@ -62,37 +62,45 @@ const PhotoelectricSimulator: React.FC = () => {
     }
 
     if (isEmittingElectrons) {
-      const animation = Animated.sequence([
-        Animated.timing(emissionAnimation, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(collectAnimation, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]);
+      try {
+        const animation = Animated.sequence([
+          Animated.timing(emissionAnimation, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(collectAnimation, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]);
 
-      animation.start();
-      animationRef.current = animation;
+        animation.start();
+        animationRef.current = animation;
+      } catch (error) {
+        console.log('Emission animation error:', error);
+      }
     } else {
-      const animation = Animated.parallel([
-        Animated.timing(emissionAnimation, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(collectAnimation, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]);
+      try {
+        const animation = Animated.parallel([
+          Animated.timing(emissionAnimation, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(collectAnimation, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]);
 
-      animation.start();
-      animationRef.current = animation;
+        animation.start();
+        animationRef.current = animation;
+      } catch (error) {
+        console.log('Stop animation error:', error);
+      }
     }
 
     // Temizleme fonksiyonu
@@ -156,6 +164,37 @@ const PhotoelectricSimulator: React.FC = () => {
     return null;
   };
 
+  // Animasyon değerleri için güvenli interpolasyon
+  const getInterpolatedValue = (
+    anim: Animated.Value,
+    inputRange: number[],
+    outputRange: any[]
+  ) => {
+    if (!anim) return outputRange[0];
+
+    try {
+      return anim.interpolate({
+        inputRange,
+        outputRange,
+      });
+    } catch (error) {
+      console.log('Interpolation error:', error);
+      return outputRange[0];
+    }
+  };
+
+  // Transformasyonları güvenli şekilde oluşturma
+  const getSafeTransform = (transforms: any[]) => {
+    if (!transforms || !Array.isArray(transforms)) return [];
+
+    try {
+      return transforms;
+    } catch (error) {
+      console.log('Transform error:', error);
+      return [];
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.experimentContainer}>
@@ -165,16 +204,18 @@ const PhotoelectricSimulator: React.FC = () => {
             styles.experimentSetup,
             {
               opacity: isLightOn ? 1 : 0.7,
-              transform: [
+              transform: getSafeTransform([
                 {
-                  scale: isLightOn
-                    ? Animated.add(
-                        1,
-                        Animated.multiply(emissionAnimation, 0.02)
-                      )
-                    : 1,
+                  scale:
+                    isLightOn && emissionAnimation
+                      ? getInterpolatedValue(
+                          emissionAnimation,
+                          [0, 1],
+                          [1, 1.02]
+                        )
+                      : 1,
                 },
-              ],
+              ]),
             },
           ]}
         >
@@ -246,7 +287,15 @@ const PhotoelectricSimulator: React.FC = () => {
                   frequency >= thresholdFrequency
                     ? styles.resultIndicatorSuccess
                     : styles.resultIndicatorWarning,
-                  { opacity: emissionAnimation },
+                  {
+                    opacity: emissionAnimation
+                      ? getInterpolatedValue(
+                          emissionAnimation,
+                          [0, 1],
+                          [0.3, 1]
+                        )
+                      : 0.3,
+                  },
                 ]}
               />
               <Text style={styles.resultsValue}>

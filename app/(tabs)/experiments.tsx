@@ -390,6 +390,19 @@ const experiments: Experiment[] = [
       'Interactively observe accelerated motion, velocity, and position changes. Experimentally explore kinematic equations.',
     route: '/experiments/basics/acceleration' as any,
   },
+  {
+    id: '31',
+    title: 'Transformatör Deneyi',
+    titleEn: 'Transformer Experiment',
+    category: 'electricity',
+    difficulty: 'Orta Seviye',
+    difficultyEn: 'Intermediate',
+    description:
+      'Transformatörlerin çalışma prensiplerini keşfedin ve parametreleri değiştirerek gerçek zamanlı sonuçları gözlemleyin. Elektromanyetik indüksiyon ve voltaj dönüştürme kavramlarını anlamak için interaktif bir deney.',
+    descriptionEn:
+      'Explore the working principles of transformers and observe real-time results by changing parameters. An interactive experiment to understand electromagnetic induction and voltage conversion concepts.',
+    route: '/experiments/electric/transformer' as any,
+  },
 ];
 
 // Category translations for display

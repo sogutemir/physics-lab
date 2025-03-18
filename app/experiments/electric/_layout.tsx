@@ -43,6 +43,13 @@ export default function ElectricLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="transformer"
+        options={{
+          title: t('Transformatör', 'Transformer'),
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

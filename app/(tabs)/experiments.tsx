@@ -274,25 +274,29 @@ const experiments: Experiment[] = [
   },
   {
     id: '20',
-    title: 'RLC Devresi',
-    titleEn: 'RLC Circuit',
-    category: 'electricity',
-    difficulty: 'İleri Seviye',
-    difficultyEn: 'Advanced',
-    description: 'RLC devresi ve rezonans',
-    descriptionEn: 'RLC circuit and resonance',
-    route: '/experiments/electricity/rlc-circuit' as any,
-  },
-  {
-    id: '21',
-    title: 'Transformatör',
-    titleEn: 'Transformer',
+    title: 'RLC Devre Laboratuvarı',
+    titleEn: 'RLC Circuit Laboratory',
     category: 'electricity',
     difficulty: 'Orta Seviye',
     difficultyEn: 'Intermediate',
-    description: 'Transformatör çalışma prensibi',
-    descriptionEn: 'Transformer working principle',
-    route: '/experiments/electricity/transformer' as any,
+    description:
+      'Bu deneyde direnç, indüktans ve kapasitans arasındaki ilişkiyi keşfedin. Farklı parametreleri değiştirerek devrenin davranışını gözlemleyin ve rezonans frekansını bulun.',
+    descriptionEn:
+      'In this experiment, explore the relationship between resistance, inductance, and capacitance. Observe the behavior of the circuit by changing different parameters and find the resonance frequency.',
+    route: '/experiments/electric/rc-circuit' as any,
+  },
+  {
+    id: '21',
+    title: 'Transformatör Deneyi',
+    titleEn: 'Transformer Experiment',
+    category: 'electricity',
+    difficulty: 'Orta Seviye',
+    difficultyEn: 'Intermediate',
+    description:
+      'Transformatörlerin çalışma prensiplerini keşfedin ve parametreleri değiştirerek gerçek zamanlı sonuçları gözlemleyin. Elektromanyetik indüksiyon ve voltaj dönüştürme kavramlarını anlamak için interaktif bir deney.',
+    descriptionEn:
+      'Explore the working principles of transformers and observe real-time results by changing parameters. An interactive experiment to understand electromagnetic induction and voltage conversion concepts.',
+    route: '/experiments/electric/transformer' as any,
   },
   {
     id: '22',
@@ -353,19 +357,6 @@ const experiments: Experiment[] = [
   },
   {
     id: '27',
-    title: 'RLC Devre Laboratuvarı',
-    titleEn: 'RLC Circuit Laboratory',
-    category: 'electricity',
-    difficulty: 'Orta Seviye',
-    difficultyEn: 'Intermediate',
-    description:
-      'Bu deneyde direnç, indüktans ve kapasitans arasındaki ilişkiyi keşfedin. Farklı parametreleri değiştirerek devrenin davranışını gözlemleyin ve rezonans frekansını bulun.',
-    descriptionEn:
-      'In this experiment, explore the relationship between resistance, inductance, and capacitance. Observe the behavior of the circuit by changing different parameters and find the resonance frequency.',
-    route: '/experiments/electric/rc-circuit' as any,
-  },
-  {
-    id: '28',
     title: 'Manyetik Alan',
     titleEn: 'Magnetic Field',
     category: 'electricity',
@@ -378,7 +369,7 @@ const experiments: Experiment[] = [
     route: '/experiments/electric/magnetic-field' as any,
   },
   {
-    id: '29',
+    id: '28',
     title: 'İvme Deneyi',
     titleEn: 'Acceleration Experiment',
     category: 'basics',

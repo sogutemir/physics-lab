@@ -38,17 +38,24 @@ const DoubleSlitSimulation: React.FC<ExperimentSimulationProps> = ({
   // Dalga animasyonu için shared values
   const waveOpacity = useSharedValue(0);
 
-  // Kaynak ve ekran mesafelerine göre pozisyonları hesaplama
-  // Toplam mesafenin yüzdesi olarak mesafeleri belirleme
-  const totalDistance = sourceDistance + screenDistance;
-  const sourceRatio = 0.15; // Kaynak pozisyonu daha sola alındı
-  const barrierRatio = Math.min(0.45, sourceDistance / totalDistance); // Bariyerin maksimum pozisyonu sınırlandırıldı
-  const screenRatio = Math.min(0.75, barrierRatio + 0.3); // Ekran pozisyonu bariyerden belli mesafede
+  // Bariyerin konumu her zaman sabit
+  const barrierX = screenWidth * 0.5; // Bariyer tam ortada sabit
 
-  // Komponentlerin yatay pozisyonları (piksel cinsinden)
-  const sourceX = screenWidth * sourceRatio;
-  const barrierX = screenWidth * barrierRatio;
-  const screenX = screenWidth * screenRatio;
+  // Mobil cihazlarda uyum kontrolü
+  const { width: deviceWidth } = Dimensions.get('window');
+  const isMobile = deviceWidth < 768;
+
+  // Mobil cihazlarda ekran mesafesini sınırla
+  const effectiveScreenDistance =
+    isMobile && screenDistance > 200 ? 200 : screenDistance;
+
+  // Kaynak pozisyonu sadece kaynak mesafesine bağlı
+  const sourceX = Math.max(10, barrierX - (sourceDistance / 100) * 40);
+
+  // Ekran pozisyonu sadece ekran mesafesine bağlı - mobilde güvenli sınırlar içinde
+  const screenXRatio = (effectiveScreenDistance / 100) * 40;
+  const maxScreenX = screenWidth * 0.85; // Güvenli sınır
+  const screenX = Math.min(maxScreenX, barrierX + screenXRatio);
 
   // Ekran merkez Y pozisyonu (mobil cihazlarda daha kompakt olması için)
   const centerY = 80;
@@ -99,8 +106,9 @@ const DoubleSlitSimulation: React.FC<ExperimentSimulationProps> = ({
         <View style={{ position: 'relative', width: '100%', height: '100%' }}>
           {/* Işık kaynağından çıkan dairesel dalgalar */}
           {[...Array(4)].map((_, i) => {
-            const radius = (((i + phase) % 4) / 4) * (barrierX - sourceX);
-            if (radius > 0 && radius < barrierX - sourceX) {
+            const maxRadius = barrierX - sourceX;
+            const radius = (((i + phase) % 4) / 4) * maxRadius;
+            if (radius > 0 && radius < maxRadius) {
               return (
                 <View
                   key={`source-wave-${i}`}
@@ -113,7 +121,7 @@ const DoubleSlitSimulation: React.FC<ExperimentSimulationProps> = ({
                     borderRadius: radius,
                     borderWidth: 1,
                     borderColor: color + '60', // Yarı saydam renk
-                    opacity: 0.5 - radius / (barrierX - sourceX) / 4,
+                    opacity: 0.5 - radius / maxRadius / 3,
                   }}
                 />
               );
@@ -142,6 +150,11 @@ const DoubleSlitSimulation: React.FC<ExperimentSimulationProps> = ({
 
             // Yarık genişliğine göre yayılan dalganın açısını ayarla
             const waveAngle = Math.max(20, 70 - slitWidth * 20); // Yarık genişliği artınca dalga açısı azalır
+            // Ekran mesafesi arttıkça dalga yayılımı azalır (ters orantılı)
+            const distanceFactor = Math.min(
+              1.0,
+              Math.max(0.4, 100 / effectiveScreenDistance)
+            );
 
             if (radius > 0 && radius < maxRadius) {
               return (
@@ -151,9 +164,16 @@ const DoubleSlitSimulation: React.FC<ExperimentSimulationProps> = ({
                     position: 'absolute',
                     left: barrierX,
                     top:
-                      slit1Y - radius * Math.sin((waveAngle * Math.PI) / 180),
+                      slit1Y -
+                      radius *
+                        Math.sin((waveAngle * Math.PI) / 180) *
+                        distanceFactor,
                     width: radius,
-                    height: radius * 2 * Math.sin((waveAngle * Math.PI) / 180),
+                    height:
+                      radius *
+                      2 *
+                      Math.sin((waveAngle * Math.PI) / 180) *
+                      distanceFactor,
                     borderTopRightRadius: radius,
                     borderBottomRightRadius: radius,
                     borderRightWidth: 1,
@@ -176,6 +196,11 @@ const DoubleSlitSimulation: React.FC<ExperimentSimulationProps> = ({
 
             // Yarık genişliğine göre yayılan dalganın açısını ayarla
             const waveAngle = Math.max(20, 70 - slitWidth * 20); // Yarık genişliği artınca dalga açısı azalır
+            // Ekran mesafesi arttıkça dalga yayılımı azalır (ters orantılı)
+            const distanceFactor = Math.min(
+              1.0,
+              Math.max(0.4, 100 / effectiveScreenDistance)
+            );
 
             if (radius > 0 && radius < maxRadius) {
               return (
@@ -185,9 +210,16 @@ const DoubleSlitSimulation: React.FC<ExperimentSimulationProps> = ({
                     position: 'absolute',
                     left: barrierX,
                     top:
-                      slit2Y - radius * Math.sin((waveAngle * Math.PI) / 180),
+                      slit2Y -
+                      radius *
+                        Math.sin((waveAngle * Math.PI) / 180) *
+                        distanceFactor,
                     width: radius,
-                    height: radius * 2 * Math.sin((waveAngle * Math.PI) / 180),
+                    height:
+                      radius *
+                      2 *
+                      Math.sin((waveAngle * Math.PI) / 180) *
+                      distanceFactor,
                     borderTopRightRadius: radius,
                     borderBottomRightRadius: radius,
                     borderRightWidth: 1,
@@ -247,7 +279,7 @@ const DoubleSlitSimulation: React.FC<ExperimentSimulationProps> = ({
     );
   };
 
-  // Işık ışınlarının yarıklardan ekrana giden yolunu çizme (daha az sayıda ışın)
+  // Işık ışınlarının yarıklardan ekrana giden yolunu çizme
   const renderInterferencePattern = () => {
     // Ekrandaki farklı noktalara giden dalga yolları
     const points = 5; // Ekrandaki nokta sayısı (azaltıldı)
@@ -256,17 +288,28 @@ const DoubleSlitSimulation: React.FC<ExperimentSimulationProps> = ({
     // Yarık ayrımına göre maksimum ve minimum mesafeleri ayarla
     const spread = Math.min(30, 15 + slitSeparation * 5); // Yarık ayrımı artınca ışınlar daha geniş açı yapar
 
+    // Ekran mesafesi arttıkça ışınların açılma faktörü - ters orantılı
+    const distanceFactor = Math.min(
+      1.5,
+      Math.max(0.5, 200 / effectiveScreenDistance)
+    );
+
     for (let i = 0; i < points; i++) {
-      // Yarık ayrımına göre hedef noktaları ayarla
-      const targetY = centerY + (i - (points - 1) / 2) * spread;
+      // Yarık ayrımına göre hedef noktaları ayarla - ekran mesafesini de hesaba katıyoruz
+      const targetY =
+        centerY + ((i - (points - 1) / 2) * spread) / distanceFactor;
 
       // Yarık genişliği ve ayrımına göre parlaklık hesapla
       const normalizedPos = (i - (points - 1) / 2) / ((points - 1) / 2);
       const phaseShift = (Math.abs(normalizedPos) * Math.PI) / 2; // Faz farkı
-      const interferenceFactor = Math.pow(
-        Math.cos((slitSeparation * normalizedPos * Math.PI) / 2),
-        2
+      // Ekran mesafesi arttıkça girişim daha belirgin
+      const distanceIntensityFactor = Math.min(
+        1.2,
+        Math.max(0.6, effectiveScreenDistance / 100)
       );
+      const interferenceFactor =
+        Math.pow(Math.cos((slitSeparation * normalizedPos * Math.PI) / 2), 2) *
+        distanceIntensityFactor;
       const opacity = 0.2 + interferenceFactor * 0.5;
 
       // Üst yarıktan gelen ışın
@@ -342,6 +385,9 @@ const DoubleSlitSimulation: React.FC<ExperimentSimulationProps> = ({
 
   // Ekrana ışık izdüşümünü çizme
   const renderLightToScreen = () => {
+    // Ekran mesafesine göre ışık hüzmesi genişliği
+    const beamHeight = Math.min(60, 30 + (effectiveScreenDistance / 100) * 30);
+
     return (
       <Animated.View
         style={[
@@ -355,17 +401,17 @@ const DoubleSlitSimulation: React.FC<ExperimentSimulationProps> = ({
             style={{
               position: 'absolute',
               left: barrierX,
-              top: centerY - 30, // Daha dar bir alan
+              top: centerY - beamHeight / 2,
               width: screenX - barrierX,
-              height: 60, // Daha dar bir alan
+              height: beamHeight,
               backgroundColor: 'transparent',
               borderColor: color + '15',
               borderRightWidth: 1,
               borderLeftWidth: 0,
               borderTopWidth: 1,
               borderBottomWidth: 1,
-              borderTopRightRadius: 60,
-              borderBottomRightRadius: 60,
+              borderTopRightRadius: beamHeight,
+              borderBottomRightRadius: beamHeight,
               opacity: 0.6 + Math.sin(phase * Math.PI * 2) * 0.2,
             }}
           />
@@ -449,7 +495,7 @@ const DoubleSlitSimulation: React.FC<ExperimentSimulationProps> = ({
         <View style={styles.distanceContainer}>
           <View style={styles.distanceLine}></View>
           <Text style={styles.distanceText}>
-            {screenDistance.toFixed(0)} mm
+            {effectiveScreenDistance.toFixed(0)} mm
           </Text>
         </View>
 

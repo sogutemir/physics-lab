@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+  Dimensions,
+} from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useLanguage } from '../../../../../components/LanguageContext';
 import { wavelengthToRGB } from '../../utils/physics';
@@ -35,6 +42,13 @@ const DoubleSlitControlPanel: React.FC<ControlProps> = ({
 }) => {
   const { t } = useLanguage();
   const waveColor = wavelengthToRGB(wavelength);
+
+  // Ekran genişliğini kontrol et
+  const { width: screenWidth } = Dimensions.get('window');
+  const isMobile = Platform.OS !== 'web' || screenWidth < 768;
+
+  // Mobil cihazlarda maksimum ekran mesafesi
+  const maxScreenDistance = isMobile ? 200 : 500;
 
   return (
     <View style={styles.container}>
@@ -102,9 +116,9 @@ const DoubleSlitControlPanel: React.FC<ControlProps> = ({
             <Text style={styles.value}>{sourceDistance.toFixed(0)} mm</Text>
             <Slider
               value={sourceDistance}
-              minimumValue={200}
-              maximumValue={1000}
-              step={50}
+              minimumValue={50}
+              maximumValue={300}
+              step={10}
               onValueChange={setSourceDistance}
               minimumTrackTintColor="#3b82f6"
               thumbTintColor="#2563eb"
@@ -115,14 +129,27 @@ const DoubleSlitControlPanel: React.FC<ControlProps> = ({
           <View style={styles.controlGroup}>
             <Text style={styles.label}>
               {t('Ekran Mesafesi', 'Screen Distance')}
+              {isMobile && (
+                <Text style={styles.mobileNote}>
+                  {' '}
+                  {t('(Mobilde maks. 200mm)', '(Max 200mm on mobile)')}
+                </Text>
+              )}
             </Text>
             <Text style={styles.value}>{screenDistance.toFixed(0)} mm</Text>
             <Slider
               value={screenDistance}
-              minimumValue={200}
-              maximumValue={1000}
-              step={50}
-              onValueChange={setScreenDistance}
+              minimumValue={50}
+              maximumValue={maxScreenDistance}
+              step={10}
+              onValueChange={(value) => {
+                // Mobilde 200mm'den fazla değer seçilememesini sağla
+                if (isMobile && value > 200) {
+                  setScreenDistance(200);
+                } else {
+                  setScreenDistance(value);
+                }
+              }}
               minimumTrackTintColor="#3b82f6"
               thumbTintColor="#2563eb"
               style={styles.slider}
@@ -212,6 +239,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#ffffff',
+  },
+  mobileNote: {
+    fontSize: 9,
+    fontStyle: 'italic',
+    color: '#94a3b8',
   },
 });
 

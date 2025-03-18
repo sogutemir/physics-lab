@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -41,6 +41,14 @@ const InterferencePattern: React.FC<InterferencePatternProps> = ({
   const { t } = useLanguage();
   const color = wavelengthToRGB(wavelength);
 
+  // Mobil cihaz kontrolü
+  const { width: deviceWidth } = Dimensions.get('window');
+  const isMobile = Platform.OS !== 'web' || deviceWidth < 768;
+
+  // Mobil cihazlarda ekran mesafesini sınırla
+  const effectiveDistance =
+    isMobile && distanceToScreen > 200 ? 200 : distanceToScreen;
+
   // Animasyon değerleri
   const patternOpacity = useSharedValue(0);
   const pulseIntensity = useSharedValue(1);
@@ -81,42 +89,68 @@ const InterferencePattern: React.FC<InterferencePatternProps> = ({
     const lineCount = 11; // Toplam çizgi sayısı
     const lines = [];
 
-    // Yarık ayrımı etkisi
-    // d * sin(theta) = m * lambda formülünde, d daha büyük olduğunda, saçılma açısı daha küçük olur
-    // Bu da ekrandaki çizgilerin daha sık olmasına neden olur
+    // Yarık ayrımı etkisi - d sin(theta) = m * lambda formülünden
+    // d arttıkça çizgiler sıklaşır (dalga boyu sabit için)
     const baseSpacing = 7;
-    const spacing = baseSpacing * (2 / (slitSeparation + 0.5)); // Yarık ayrımı artınca bantlar sıklaşır
 
-    // Yarık genişliği etkisi
-    // a sin(theta) = m * lambda formülünde, a daha küçük olduğunda, bantlar daha geniş olur
-    const maxBrightness = Math.min(1, 1.5 / (slitWidth + 0.5)); // Yarık genişliği artınca kontrast azalır
-    const minBrightness = Math.max(0.05, 0.1 / (slitWidth + 0.5)); // Yarık genişliği artınca minimum parlaklık artar
+    // Ekran mesafesi etkisi - L * sin(theta) ters orantılı
+    // Ekran uzaklaştıkça desenler genişler
+    const distanceFactor = Math.sqrt(effectiveDistance / 100);
+
+    // Ekran mesafesi ve yarık ayrımının kombinasyonu
+    const spacing = baseSpacing * (2 / (slitSeparation + 0.5)) * distanceFactor;
+
+    // Yarık genişliği etkisi - a sin(theta) = m * lambda
+    // a küçüldükçe maksimum ve minimumlar belirginsizleşir
+    const maxBrightness = Math.min(1, 1.5 / (slitWidth + 0.5)); // Yarık genişliği artınca maksimum düşer
+    const minBrightness = Math.max(0.05, 0.1 / (slitWidth + 0.5)); // Minimum parlaklık artar
 
     for (let i = 0; i < lineCount; i++) {
       // Merkezi çizgi ve alternatif parlak/karanlık bantlar
       const isCenterLine = i === Math.floor(lineCount / 2);
       const position = i - Math.floor(lineCount / 2); // -5 to +5
 
-      // Sin fonksiyonu kullanarak girişim deseni oluşturma
-      // Yarık ayrımı arttıkça sin eğrisi daha sık salınım yapar
+      // Mesafenin girişim deseni üzerindeki etkisi
       const normPosition = position / Math.floor(lineCount / 2); // -1 to +1
-      const envelopeValue = Math.cos((Math.PI * normPosition) / 2); // Merkezdeki yoğunluk zarfı (1 den 0'a)
-      const interference = Math.pow(
-        Math.cos((Math.PI * slitSeparation * normPosition) / 2),
-        2
-      ); // Girişim deseni
-      const diffraction = Math.pow(
-        Math.sin(Math.PI * slitWidth * normPosition + 0.001) /
-          (Math.PI * slitWidth * normPosition + 0.001),
-        2
-      ); // Kırınım terimi
 
+      // Mesafeye bağlı ölçekleme faktörü - yakın mesafede desenler sıkışık, uzak mesafede genişlemiş olmalı
+      const scaledPosition = normPosition / distanceFactor;
+
+      // Merkezdeki yoğunluk zarfı
+      const envelopeValue = Math.cos((Math.PI * scaledPosition) / 2); // 1 den 0'a
+
+      // Slit ayrımı ve mesafeye bağlı girişim
+      const interference = Math.pow(
+        Math.cos((Math.PI * slitSeparation * scaledPosition) / 2),
+        2
+      );
+
+      // Mesafeye bağlı kırınım faktörü
+      const diffractionFactor = Math.min(
+        1.2,
+        Math.max(0.7, effectiveDistance / 150)
+      );
+
+      // Kırınım deseni
+      const diffraction =
+        Math.pow(
+          Math.sin(Math.PI * slitWidth * scaledPosition + 0.001) /
+            (Math.PI * slitWidth * scaledPosition + 0.001),
+          2
+        ) * diffractionFactor;
+
+      // Toplam opaklık hesabı
       let opacity = isCenterLine
         ? maxBrightness
         : interference *
           envelopeValue *
           maxBrightness *
-          (1 - 0.4 * Math.abs(normPosition));
+          (1 - 0.3 * Math.abs(normPosition));
+
+      // Mesafe arttıkça maksimumlar daha belirgin olur
+      if (effectiveDistance > 150 && !isCenterLine && interference > 0.7) {
+        opacity = opacity * Math.min(1.3, effectiveDistance / 150);
+      }
 
       // Belirli bir maksimum ve minimum arasında sınırlama
       opacity = Math.max(minBrightness, Math.min(maxBrightness, opacity));
@@ -127,7 +161,7 @@ const InterferencePattern: React.FC<InterferencePatternProps> = ({
           style={[
             styles.intensityLine,
             {
-              top: 5 + i * spacing, // Yarık ayrımına göre aralıkları ayarla
+              top: 5 + i * spacing,
               backgroundColor: color,
               opacity,
               height: isCenterLine ? 3 : 2, // Merkez çizgi daha kalın

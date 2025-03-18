@@ -4,23 +4,32 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  Easing,
   withRepeat,
+  Easing,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import { useLanguage } from '../../../../../components/LanguageContext';
-import {
-  wavelengthToRGB,
-  generateInterferencePattern,
-  calculatePeriod,
-} from '../../utils/physics';
+import { wavelengthToRGB } from '../../utils/physics';
 
 interface InterferencePatternProps {
-  wavelength: number; // nm cinsinden
-  slitWidth: number; // mm cinsinden
-  slitSeparation: number; // mm cinsinden
-  distanceToScreen: number; // mm cinsinden
+  wavelength: number;
+  slitWidth: number;
+  slitSeparation: number;
+  distanceToScreen: number;
   isActive: boolean;
 }
+
+// Ekran bileşeni (Frame + stand)
+const ScreenFrame: React.FC<{ color: string }> = ({ color }) => (
+  <View style={styles.screenFrame}>
+    {/* Ekran standı */}
+    <View style={styles.screenStand} />
+
+    {/* Ekran üst ve alt destekleri */}
+    <View style={[styles.screenSupport, { top: 0 }]} />
+    <View style={[styles.screenSupport, { bottom: 0 }]} />
+  </View>
+);
 
 const InterferencePattern: React.FC<InterferencePatternProps> = ({
   wavelength,
@@ -31,102 +40,123 @@ const InterferencePattern: React.FC<InterferencePatternProps> = ({
 }) => {
   const { t } = useLanguage();
   const color = wavelengthToRGB(wavelength);
-  const opacity = useSharedValue(0);
-  const pulseAnim = useSharedValue(0);
 
-  // Girişim periyodu hesaplama
-  const period = calculatePeriod(wavelength, slitSeparation, distanceToScreen);
+  // Animasyon değerleri
+  const patternOpacity = useSharedValue(0);
+  const pulseIntensity = useSharedValue(1);
 
-  // IsActive değiştiğinde animasyon
+  // Girişim deseni animasyonu
   useEffect(() => {
-    opacity.value = withTiming(isActive ? 1 : 0, {
-      duration: 500,
-      easing: Easing.inOut(Easing.ease),
-    });
-
     if (isActive) {
-      pulseAnim.value = withRepeat(
-        withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
+      patternOpacity.value = withTiming(1, { duration: 500 });
+      pulseIntensity.value = withRepeat(
+        withTiming(1.2, { duration: 1000, easing: Easing.inOut(Easing.sin) }),
         -1,
         true
       );
     } else {
-      pulseAnim.value = 0;
+      cancelAnimation(pulseIntensity);
+      patternOpacity.value = withTiming(0, { duration: 300 });
+      pulseIntensity.value = withTiming(1);
     }
+
+    return () => {
+      cancelAnimation(patternOpacity);
+      cancelAnimation(pulseIntensity);
+    };
   }, [isActive]);
 
-  // Girişim deseni oluşturma
-  const screenHeight = 80;
-  const pattern = generateInterferencePattern(
-    screenHeight,
-    25, // Çizgi sayısı
-    wavelength,
-    slitSeparation,
-    slitWidth,
-    distanceToScreen
-  );
+  // Animasyon stilleri
+  const patternStyle = useAnimatedStyle(() => ({
+    opacity: patternOpacity.value,
+  }));
 
-  // RGB bileşenlerini alma
-  const rgbMatch = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-  const [, r, g, b] = rgbMatch ? rgbMatch.map(Number) : [0, 0, 0, 0];
+  const pulseStyle = useAnimatedStyle(() => ({
+    opacity: patternOpacity.value * pulseIntensity.value,
+  }));
 
-  // Animasyonlu stil
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-    };
-  });
+  // Girişim deseni oluşturma (parametrelere göre dinamik)
+  const renderInterferencePattern = () => {
+    // Girişim deseni parametreleri
+    const lineCount = 11; // Toplam çizgi sayısı
+    const lines = [];
 
-  // Nabız animasyonu
-  const pulseStyle = useAnimatedStyle(() => {
-    return {
-      opacity: 0.5 + pulseAnim.value * 0.5,
-    };
-  });
+    // Yarık ayrımı etkisi
+    // d * sin(theta) = m * lambda formülünde, d daha büyük olduğunda, saçılma açısı daha küçük olur
+    // Bu da ekrandaki çizgilerin daha sık olmasına neden olur
+    const baseSpacing = 7;
+    const spacing = baseSpacing * (2 / (slitSeparation + 0.5)); // Yarık ayrımı artınca bantlar sıklaşır
+
+    // Yarık genişliği etkisi
+    // a sin(theta) = m * lambda formülünde, a daha küçük olduğunda, bantlar daha geniş olur
+    const maxBrightness = Math.min(1, 1.5 / (slitWidth + 0.5)); // Yarık genişliği artınca kontrast azalır
+    const minBrightness = Math.max(0.05, 0.1 / (slitWidth + 0.5)); // Yarık genişliği artınca minimum parlaklık artar
+
+    for (let i = 0; i < lineCount; i++) {
+      // Merkezi çizgi ve alternatif parlak/karanlık bantlar
+      const isCenterLine = i === Math.floor(lineCount / 2);
+      const position = i - Math.floor(lineCount / 2); // -5 to +5
+
+      // Sin fonksiyonu kullanarak girişim deseni oluşturma
+      // Yarık ayrımı arttıkça sin eğrisi daha sık salınım yapar
+      const normPosition = position / Math.floor(lineCount / 2); // -1 to +1
+      const envelopeValue = Math.cos((Math.PI * normPosition) / 2); // Merkezdeki yoğunluk zarfı (1 den 0'a)
+      const interference = Math.pow(
+        Math.cos((Math.PI * slitSeparation * normPosition) / 2),
+        2
+      ); // Girişim deseni
+      const diffraction = Math.pow(
+        Math.sin(Math.PI * slitWidth * normPosition + 0.001) /
+          (Math.PI * slitWidth * normPosition + 0.001),
+        2
+      ); // Kırınım terimi
+
+      let opacity = isCenterLine
+        ? maxBrightness
+        : interference *
+          envelopeValue *
+          maxBrightness *
+          (1 - 0.4 * Math.abs(normPosition));
+
+      // Belirli bir maksimum ve minimum arasında sınırlama
+      opacity = Math.max(minBrightness, Math.min(maxBrightness, opacity));
+
+      lines.push(
+        <View
+          key={`line-${i}`}
+          style={[
+            styles.intensityLine,
+            {
+              top: 5 + i * spacing, // Yarık ayrımına göre aralıkları ayarla
+              backgroundColor: color,
+              opacity,
+              height: isCenterLine ? 3 : 2, // Merkez çizgi daha kalın
+            },
+          ]}
+        />
+      );
+    }
+
+    return lines;
+  };
 
   return (
     <View style={styles.container}>
-      {/* Dikey stand çubuğu */}
-      <View style={styles.standPole} />
-
-      {/* Ekran - Siyah dikdörtgen */}
       <View style={styles.screenContainer}>
-        {/* Girişim deseni - Çift yarık için */}
-        {isActive && (
-          <Animated.View style={[styles.patternContainer, animatedStyle]}>
-            {/* Girişim çizgileri */}
-            {pattern.map((intensity, index) => (
-              <Animated.View
-                key={`line-${index}`}
-                style={[
-                  styles.intensityLine,
-                  pulseStyle,
-                  {
-                    opacity: intensity,
-                    backgroundColor: `rgba(${r}, ${g}, ${b}, ${intensity})`,
-                    height: intensity * 3 + 1, // Daha kalın çizgiler
-                    marginVertical: 0.5,
-                  },
-                ]}
-              />
-            ))}
-          </Animated.View>
-        )}
-      </View>
+        {/* Ekran çerçevesi */}
+        <ScreenFrame color={color} />
 
-      {/* Periyot bilgisi */}
-      {isActive && (
-        <View style={styles.periodInfo}>
-          <Text style={styles.periodText}>
-            {t('Periyot', 'Period')}: {period.toFixed(2)} mm
-          </Text>
+        {/* Girişim deseni ekranı */}
+        <View style={styles.screen}>
+          <Animated.View style={[styles.patternContainer, patternStyle]}>
+            {renderInterferencePattern()}
+          </Animated.View>
         </View>
-      )}
+      </View>
 
       {/* Etiket */}
       <View style={styles.label}>
         <Text style={styles.labelText}>{t('Ekran', 'Screen')}</Text>
-        <Text style={styles.valueText}>{distanceToScreen.toFixed(0)} mm</Text>
       </View>
     </View>
   );
@@ -134,75 +164,73 @@ const InterferencePattern: React.FC<InterferencePatternProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    height: 160,
-    alignItems: 'center',
+    height: 140, // Daha kısa
     justifyContent: 'center',
+    alignItems: 'center',
     position: 'relative',
-  },
-  standPole: {
-    width: 1,
-    height: 180,
-    backgroundColor: '#6b7280',
-    position: 'absolute',
-    zIndex: 1,
+    right: 10, // Sağdan biraz içeri çekiyoruz
   },
   screenContainer: {
-    width: 40,
-    height: 80,
-    backgroundColor: '#000000',
-    borderRadius: 1,
-    position: 'relative',
-    justifyContent: 'center',
+    width: 25, // Daha dar
+    height: 90, // Daha kısa
     alignItems: 'center',
-    zIndex: 2,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#333',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  screenFrame: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    borderWidth: 2,
+    borderColor: '#64748b',
+    borderRadius: 4,
+    backgroundColor: 'transparent',
+  },
+  screen: {
+    width: '88%',
+    height: '92%',
+    backgroundColor: '#111', // Daha koyu arka plan
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 2,
   },
   patternContainer: {
     width: '100%',
     height: '100%',
-    flexDirection: 'column',
-    justifyContent: 'space-evenly',
+    position: 'relative',
   },
   intensityLine: {
-    width: '100%',
-    height: 1,
-    marginVertical: 0.5,
-  },
-  periodInfo: {
     position: 'absolute',
-    top: -20,
-    right: -40,
-    padding: 2,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 4,
-    zIndex: 20,
+    left: 1,
+    right: 1,
+    height: 2, // Daha ince
+    borderRadius: 1,
   },
-  periodText: {
-    fontSize: 10,
-    color: '#fff',
-    fontFamily: 'monospace',
-  },
-  lightLine: {
-    width: '100%',
-    height: 1,
+  screenStand: {
     position: 'absolute',
+    bottom: -12,
+    width: 2,
+    height: 16,
+    backgroundColor: '#94a3b8',
+    zIndex: -1,
+  },
+  screenSupport: {
+    position: 'absolute',
+    left: 0,
+    width: 6,
+    height: 8,
+    backgroundColor: '#94a3b8',
+    zIndex: -1,
   },
   label: {
     position: 'absolute',
-    bottom: -24,
+    bottom: -18, // Daha yakın
     alignItems: 'center',
   },
   labelText: {
-    fontSize: 12,
+    fontSize: 10, // Daha küçük
     fontWeight: '500',
     color: '#4b5563',
-  },
-  valueText: {
-    fontSize: 12,
-    fontFamily: 'monospace',
-    color: '#6b7280',
   },
 });
 

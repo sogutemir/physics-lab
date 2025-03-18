@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useLanguage } from '../../../../../components/LanguageContext';
 import { wavelengthToRGB } from '../../utils/physics';
@@ -42,101 +42,107 @@ const DoubleSlitControlPanel: React.FC<ControlProps> = ({
         <Text style={styles.title}>{t('Kontrol Paneli', 'Control Panel')}</Text>
       </View>
 
-      <View style={styles.controlGroup}>
-        <Text style={styles.label}>
-          {t('Dalga Boyu', 'Wavelength')} ({wavelength} nm)
-        </Text>
-        <Slider
-          value={wavelength}
-          minimumValue={380}
-          maximumValue={750}
-          step={10}
-          onValueChange={setWavelength}
-          minimumTrackTintColor={waveColor}
-          thumbTintColor={waveColor}
-          style={styles.slider}
-        />
-      </View>
+      <View style={styles.controlsGrid}>
+        <View style={styles.controlColumn}>
+          <View style={styles.controlGroup}>
+            <Text style={styles.label}>{t('Dalga Boyu', 'Wavelength')}</Text>
+            <Text style={styles.value}>{wavelength} nm</Text>
+            <Slider
+              value={wavelength}
+              minimumValue={380}
+              maximumValue={750}
+              step={10}
+              onValueChange={setWavelength}
+              minimumTrackTintColor={waveColor}
+              thumbTintColor={waveColor}
+              style={styles.slider}
+            />
+          </View>
 
-      <View style={styles.controlGroup}>
-        <Text style={styles.label}>
-          {t('Yarık Genişliği', 'Slit Width')} ({slitWidth.toFixed(1)} mm)
-        </Text>
-        <Slider
-          value={slitWidth}
-          minimumValue={0.1}
-          maximumValue={2}
-          step={0.1}
-          onValueChange={setSlitWidth}
-          minimumTrackTintColor="#3b82f6"
-          thumbTintColor="#2563eb"
-          style={styles.slider}
-        />
-      </View>
+          <View style={styles.controlGroup}>
+            <Text style={styles.label}>
+              {t('Yarık Genişliği', 'Slit Width')}
+            </Text>
+            <Text style={styles.value}>{slitWidth.toFixed(1)} mm</Text>
+            <Slider
+              value={slitWidth}
+              minimumValue={0.1}
+              maximumValue={2}
+              step={0.1}
+              onValueChange={setSlitWidth}
+              minimumTrackTintColor="#3b82f6"
+              thumbTintColor="#2563eb"
+              style={styles.slider}
+            />
+          </View>
 
-      <View style={styles.controlGroup}>
-        <Text style={styles.label}>
-          {t('Yarık Ayrımı', 'Slit Separation')} ({slitSeparation.toFixed(1)}{' '}
-          mm)
-        </Text>
-        <Slider
-          value={slitSeparation}
-          minimumValue={0.5}
-          maximumValue={10}
-          step={0.5}
-          onValueChange={setSlitSeparation}
-          minimumTrackTintColor="#3b82f6"
-          thumbTintColor="#2563eb"
-          style={styles.slider}
-        />
-      </View>
+          <View style={styles.controlGroup}>
+            <Text style={styles.label}>
+              {t('Yarık Ayrımı', 'Slit Separation')}
+            </Text>
+            <Text style={styles.value}>{slitSeparation.toFixed(1)} mm</Text>
+            <Slider
+              value={slitSeparation}
+              minimumValue={0.5}
+              maximumValue={10}
+              step={0.5}
+              onValueChange={setSlitSeparation}
+              minimumTrackTintColor="#3b82f6"
+              thumbTintColor="#2563eb"
+              style={styles.slider}
+            />
+          </View>
+        </View>
 
-      <View style={styles.controlGroup}>
-        <Text style={styles.label}>
-          {t('Kaynak Mesafesi', 'Source Distance')} ({sourceDistance.toFixed(0)}{' '}
-          mm)
-        </Text>
-        <Slider
-          value={sourceDistance}
-          minimumValue={200}
-          maximumValue={1000}
-          step={50}
-          onValueChange={setSourceDistance}
-          minimumTrackTintColor="#3b82f6"
-          thumbTintColor="#2563eb"
-          style={styles.slider}
-        />
-      </View>
+        <View style={styles.controlColumn}>
+          <View style={styles.controlGroup}>
+            <Text style={styles.label}>
+              {t('Kaynak Mesafesi', 'Source Distance')}
+            </Text>
+            <Text style={styles.value}>{sourceDistance.toFixed(0)} mm</Text>
+            <Slider
+              value={sourceDistance}
+              minimumValue={200}
+              maximumValue={1000}
+              step={50}
+              onValueChange={setSourceDistance}
+              minimumTrackTintColor="#3b82f6"
+              thumbTintColor="#2563eb"
+              style={styles.slider}
+            />
+          </View>
 
-      <View style={styles.controlGroup}>
-        <Text style={styles.label}>
-          {t('Ekran Mesafesi', 'Screen Distance')} ({screenDistance.toFixed(0)}{' '}
-          mm)
-        </Text>
-        <Slider
-          value={screenDistance}
-          minimumValue={200}
-          maximumValue={1000}
-          step={50}
-          onValueChange={setScreenDistance}
-          minimumTrackTintColor="#3b82f6"
-          thumbTintColor="#2563eb"
-          style={styles.slider}
-        />
-      </View>
+          <View style={styles.controlGroup}>
+            <Text style={styles.label}>
+              {t('Ekran Mesafesi', 'Screen Distance')}
+            </Text>
+            <Text style={styles.value}>{screenDistance.toFixed(0)} mm</Text>
+            <Slider
+              value={screenDistance}
+              minimumValue={200}
+              maximumValue={1000}
+              step={50}
+              onValueChange={setScreenDistance}
+              minimumTrackTintColor="#3b82f6"
+              thumbTintColor="#2563eb"
+              style={styles.slider}
+            />
+          </View>
 
-      <View style={styles.controlGroup}>
-        <TouchableOpacity
-          onPress={() => setIsRunning(!isRunning)}
-          style={[
-            styles.button,
-            isRunning ? styles.stopButton : styles.startButton,
-          ]}
-        >
-          <Text style={styles.buttonText}>
-            {isRunning ? t('Durdur', 'Stop') : t('Başlat', 'Start')}
-          </Text>
-        </TouchableOpacity>
+          <View style={styles.controlGroup}>
+            <TouchableOpacity
+              onPress={() => setIsRunning(!isRunning)}
+              style={[
+                styles.button,
+                isRunning ? styles.stopButton : styles.startButton,
+              ]}
+            >
+              <Text style={styles.buttonText}>
+                {isRunning ? t('Durdur', 'Stop') : t('Başlat', 'Start')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -146,7 +152,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -154,31 +160,47 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   header: {
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1e293b',
-  },
-  controlGroup: {
     marginBottom: 12,
   },
+  title: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+    textAlign: 'center',
+  },
+  controlsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  controlColumn: {
+    flex: 1,
+    paddingHorizontal: 4,
+  },
+  controlGroup: {
+    marginBottom: 10,
+  },
   label: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
     color: '#64748b',
+    marginBottom: 2,
+  },
+  value: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+    color: '#0f172a',
     marginBottom: 4,
   },
   slider: {
     width: '100%',
-    height: 40,
+    height: 30,
   },
   button: {
-    padding: 12,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 6,
   },
   startButton: {
     backgroundColor: '#22c55e',

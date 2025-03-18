@@ -31,13 +31,13 @@ const WaveSource: React.FC<WaveSourceProps> = ({ wavelength, isActive }) => {
       pulseOpacity.value = 0.8;
 
       pulseScale.value = withRepeat(
-        withTiming(1.4, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1.3, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
         -1,
         true
       );
 
       pulseOpacity.value = withRepeat(
-        withTiming(0, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
         -1,
         false
       );
@@ -92,9 +92,7 @@ const WaveSource: React.FC<WaveSourceProps> = ({ wavelength, isActive }) => {
 
       {/* Etiket */}
       <View style={styles.label}>
-        <Text style={styles.labelText}>
-          {t('Işık Kaynağı', 'Light Source')}
-        </Text>
+        <Text style={styles.labelText}>{t('Işık', 'Light')}</Text>
         <Text style={styles.wavelengthText}>{wavelength} nm</Text>
       </View>
     </View>
@@ -103,10 +101,11 @@ const WaveSource: React.FC<WaveSourceProps> = ({ wavelength, isActive }) => {
 
 const styles = StyleSheet.create({
   container: {
-    height: 160,
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    left: 5,
   },
   sourceContainer: {
     alignItems: 'center',
@@ -114,15 +113,15 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   pulse: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     position: 'absolute',
   },
   source: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: '#3b82f6',
     alignItems: 'center',
     justifyContent: 'center',
@@ -133,31 +132,31 @@ const styles = StyleSheet.create({
     shadowRadius: 1.5,
   },
   sourceInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: '#ffffff',
     opacity: 0.5,
   },
   stand: {
     position: 'absolute',
     width: 1,
-    height: 180,
+    height: 120,
     backgroundColor: '#9ca3af',
     zIndex: -1,
   },
   label: {
     position: 'absolute',
-    bottom: -24,
+    bottom: -18,
     alignItems: 'center',
   },
   labelText: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '500',
     color: '#4b5563',
   },
   wavelengthText: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: 'monospace',
     color: '#6b7280',
   },

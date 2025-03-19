@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
 } from 'react-native';
-import { Link, Href } from 'expo-router';
+import { Link, Href, useLocalSearchParams } from 'expo-router';
 import { ArrowRight, Search } from 'lucide-react-native';
 import { useLanguage } from '../../components/LanguageContext';
 
@@ -399,6 +399,8 @@ const categoryTranslations: Record<Category, string> = {
 };
 
 export default function ExperimentsScreen() {
+  const params = useLocalSearchParams();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>(
     'all'
@@ -406,6 +408,28 @@ export default function ExperimentsScreen() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<
     Difficulty | 'all'
   >('all');
+
+  useEffect(() => {
+    // Check if category parameter exists in URL and is valid
+    if (params.category && typeof params.category === 'string') {
+      const category = params.category as Category;
+      
+      // Validate that it's a recognized category
+      if (Object.keys(categoryTranslations).includes(category)) {
+        setSelectedCategory(category);
+      }
+    }
+    
+    // You could also handle difficulty parameter if needed
+    if (params.difficulty && typeof params.difficulty === 'string') {
+      const difficulty = params.difficulty as Difficulty;
+      const validDifficulties: Difficulty[] = ['Başlangıç', 'Orta Seviye', 'İleri Seviye'];
+      
+      if (validDifficulties.includes(difficulty)) {
+        setSelectedDifficulty(difficulty);
+      }
+    }
+  }, [params]);
 
   // Filter experiments based on search, category, and difficulty
   const filteredExperiments = experiments.filter((experiment) => {
